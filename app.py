@@ -86,7 +86,7 @@ LOGO_PURE_B64 = _load_pure_logo()
 
 st.set_page_config(
     page_title="PureBaby",
-    page_icon=os.path.join(BASE_DIR, "zdjecia", "icon.png"),
+    page_icon="data:image/png;base64," + ICON_B64,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
