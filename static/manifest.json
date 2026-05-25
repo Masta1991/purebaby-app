@@ -1,0 +1,12 @@
+{
+    "name": "PureBaby",
+    "short_name": "PureBaby",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#F2F7FA",
+    "theme_color": "#006089",
+    "icons": [
+        {"src": "/app/static/icon.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/app/static/icon_512.png", "sizes": "512x512", "type": "image/png"}
+    ]
+}

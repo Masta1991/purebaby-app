@@ -85,8 +85,8 @@ st.markdown(f"""
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="PureBaby">
     <meta name="theme-color" content="#006089">
-    <link rel="apple-touch-icon" href="data:image/png;base64,{ICON_B64}">
-    <link rel="apple-touch-icon-precomposed" href="data:image/png;base64,{ICON_B64}">
+    <link rel="apple-touch-icon" href="/app/static/icon.png">
+    <link rel="apple-touch-icon-precomposed" href="/app/static/icon.png">
 """, unsafe_allow_html=True)
 
 PWA_MANIFEST = {
@@ -97,8 +97,8 @@ PWA_MANIFEST = {
     "background_color": "#F2F7FA",
     "theme_color": "#006089",
     "icons": [
-        {"src": f"data:image/png;base64,{ICON_B64}", "sizes": "192x192", "type": "image/png"},
-        {"src": f"data:image/png;base64,{ICON_B64_512}", "sizes": "512x512", "type": "image/png"}
+        {"src": "/app/static/icon.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/app/static/icon_512.png", "sizes": "512x512", "type": "image/png"}
     ]
 }
 PWA_MANIFEST_JSON = json.dumps(PWA_MANIFEST)
@@ -113,7 +113,6 @@ st.components.v1.html(f"""
 (function() {{
     var pdoc = window.parent.document;
     if (!pdoc) return;
-    var iconB64 = 'data:image/png;base64,{ICON_B64}';
     var metas = [
         ['apple-mobile-web-app-capable', 'yes'],
         ['apple-mobile-web-app-status-bar-style', 'default'],
@@ -132,16 +131,13 @@ st.components.v1.html(f"""
         el.href = href;
         if (extra) {{ for (var k in extra) el.setAttribute(k, extra[k]); }}
     }};
-    setLink('apple-touch-icon', iconB64);
-    setLink('apple-touch-icon-precomposed', iconB64);
-    setLink('icon', iconB64, {{type:'image/png'}});
-    setLink('shortcut icon', iconB64, {{type:'image/png'}});
-    var manifestJson = '{PWA_MANIFEST_JSON}';
-    var blob = new Blob([manifestJson], {{type: 'application/json'}});
-    var manifestUrl = URL.createObjectURL(blob);
-    setLink('manifest', manifestUrl);
-    fetch('/sw.js').then(function(r) {{
-        if (r.ok && 'serviceWorker' in navigator) {{ navigator.serviceWorker.register('/sw.js'); }}
+    setLink('apple-touch-icon', '/app/static/icon.png');
+    setLink('apple-touch-icon-precomposed', '/app/static/icon.png');
+    setLink('icon', '/app/static/icon.png', {{type:'image/png'}});
+    setLink('shortcut icon', '/app/static/icon.png', {{type:'image/png'}});
+    setLink('manifest', '/app/static/manifest.json');
+    fetch('/app/static/sw.js').then(function(r) {{
+        if (r.ok && 'serviceWorker' in navigator) {{ navigator.serviceWorker.register('/app/static/sw.js'); }}
     }}).catch(function(){{}});
 }})();
 </script>
