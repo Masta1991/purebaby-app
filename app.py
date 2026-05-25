@@ -989,20 +989,54 @@ with col_main:
                             URUCHOM KAMERĘ
                         </div>
                     </div>
+                    <div style="text-align:left;">
+                        <div style="font-size:14px;font-weight:600;color:#1B2B3A;margin-bottom:6px;">Wpisz kod ręcznie</div>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="manual-barcode" placeholder="np. 5901234567890" 
+                                style="flex:1;padding:12px 16px;border:1px solid #d0d5dd;border-radius:12px;font-size:15px;font-family:'Nunito',sans-serif;color:#1B2B3A;outline:none;background:#fff;">
+                            <span id="scan-manual-btn" style="display:none;align-items:center;padding:12px 20px;background:#006089;color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;">SKANUJ</span>
+                        </div>
+                    </div>
+                </div>
                 """, unsafe_allow_html=True)
 
-                barcode_manual = st.text_input("Wpisz kod ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
-                if barcode_manual.strip():
-                    if st.button("SKANUJ", key="btn_scan_manual", type="primary"):
-                        name, ingredients = fetch_product(barcode_manual.strip())
-                        if name is None:
-                            st.session_state.scan_result = ("not_found", None, barcode_manual.strip(), "")
-                        else:
-                            result, found, pname = check_allergens(name, ingredients, profile["allergens"])
-                            st.session_state.scan_result = (result, found, pname, ingredients)
-                        st.rerun()
+                st.components.v1.html("""
+                <script>
+                (function() {
+                    var pdoc = window.parent.document;
+                    var pwin = window.parent;
+                    var inp = pdoc.getElementById('manual-barcode');
+                    var btn = pdoc.getElementById('scan-manual-btn');
+                    if (!inp || !btn) return;
 
-                st.markdown("</div>", unsafe_allow_html=True)
+                    function doScan(val) {
+                        var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
+                        if (i) {
+                            i.focus();
+                            var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
+                            setter.call(i, 'action=barcode&code=' + encodeURIComponent(val) + '&ts=' + Date.now());
+                            i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
+                            i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
+                            i.blur();
+                        }
+                    }
+
+                    inp.addEventListener('input', function() {
+                        btn.style.display = inp.value.trim() ? 'flex' : 'none';
+                    });
+                    inp.addEventListener('keydown', function(e) {
+                        if (e.key === 'Enter' && inp.value.trim()) {
+                            doScan(inp.value.trim());
+                        }
+                    });
+                    btn.addEventListener('click', function() {
+                        if (inp.value.trim()) {
+                            doScan(inp.value.trim());
+                        }
+                    });
+                })();
+                </script>
+                """, height=0)
             else:
                 st.components.v1.html("""
                 <div id="reader" style="width:100%;max-width:400px;margin:16px auto;"></div>
