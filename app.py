@@ -52,18 +52,15 @@ def _process_icons():
             pass
     try:
         img_pil = Image.open(icon_src)
-        if img_pil.size != (192, 192):
-            img_pil = img_pil.resize((192, 192), Image.LANCZOS)
-            img_pil.save(icon_src, 'PNG')
+        img_192 = img_pil.resize((192, 192), Image.LANCZOS)
+        img_192.save(icon_fav_path, 'PNG')
         img_512 = img_pil.resize((512, 512), Image.LANCZOS)
         img_512.save(icon_512_path, 'PNG')
-        img_pil.save(icon_fav_path, 'PNG')
     except Exception:
         img = Image.new('RGBA', (192, 192), (0, 0, 0, 0))
         img.save(icon_fav_path, 'PNG')
         img.resize((512, 512), Image.LANCZOS).save(icon_512_path, 'PNG')
-        img.save(icon_src, 'PNG')
-    with open(icon_src, "rb") as f:
+    with open(icon_fav_path, "rb") as f:
         b192 = f.read()
     with open(icon_512_path, "rb") as f:
         b512 = f.read()
