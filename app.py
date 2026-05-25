@@ -858,23 +858,22 @@ with col_main:
     if st.session_state.page == "home":
         profile = st.session_state.child_profile
         if profile:
+            photo_html = ""
             if profile.get("photo"):
-                st.markdown(f"""
-                <div style="text-align:center;margin-top:8px;">
-                    <img src="data:image/png;base64,{profile['photo']}" 
-                         style="width:100px;height:100px;border-radius:50%;border:3px solid #006089;object-fit:cover;box-shadow:0 4px 16px rgba(0,96,137,0.2);">
-                </div>
-                """, unsafe_allow_html=True)
+                photo_html = f'<img src="data:image/png;base64,{profile["photo"]}" style="width:72px;height:72px;border-radius:50%;border:2px solid #006089;object-fit:cover;flex-shrink:0;">'
             st.markdown(f"""
-            <div class="content-card" style="text-align:center;">
-                <h3>Witaj, {profile['name']}! 🎉</h3>
-                <p style="color: #6B7B8D; margin-top: 8px;">Profil dziecka jest aktywny. Możesz skanować produkty i sprawdzać alergeny.</p>
+            <div class="content-card" style="display:flex;align-items:center;gap:20px;padding:28px 24px;">
+                {photo_html}
+                <div>
+                    <h3 style="margin:0;">Witaj, {profile['name']}!</h3>
+                    <p style="color:#6B7B8D;margin:6px 0 0 0;">Profil dziecka jest aktywny. Możesz skanować produkty i sprawdzać alergeny.</p>
+                </div>
             </div>
             """, unsafe_allow_html=True)
         else:
             st.markdown("""
             <div class="content-card">
-                <h3>Witaj w PureBaby! 👶</h3>
+                <h3>Witaj w PureBaby</h3>
                 <p style="color: #6B7B8D; margin-top: 8px;">
                     Aplikacja do bezpiecznego skanowania produktów spożywczych dla Twojego dziecka.
                     Zacznij od utworzenia profilu dziecka.
