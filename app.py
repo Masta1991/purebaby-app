@@ -885,15 +885,18 @@ with col_main:
         profile = st.session_state.child_profile
 
         if profile:
+            photo_html = ""
+            if profile.get('photo'):
+                photo_html = f'<img src="data:image/png;base64,{profile["photo"]}" style="width:72px;height:72px;border-radius:50%;border:2px solid #006089;object-fit:cover;flex-shrink:0;">'
             st.markdown(f"""
-            <div class="content-card">
-                <h3>Profil: {profile['name']}</h3>
-                <p style="color: #6B7B8D; margin-top: 4px;">Wiek: {profile['age']}</p>
+            <div class="content-card" style="display:flex;align-items:center;gap:20px;padding:28px 24px;">
+                {photo_html}
+                <div>
+                    <h3 style="margin:0;">Profil: {profile['name']}</h3>
+                    <p style="color:#6B7B8D;margin:6px 0 0 0;">Wiek: {profile['age']}</p>
+                </div>
             </div>
             """, unsafe_allow_html=True)
-
-            if profile.get('photo'):
-                st.markdown(f'<div style="text-align:center;margin:16px 0;"><img src="data:image/png;base64,{profile["photo"]}" style="max-width:200px;border-radius:50%;border:3px solid #006089;"></div>', unsafe_allow_html=True)
 
             if profile['allergens']:
                 tags = "".join(f'<span style="background:rgba(0,96,137,0.1);color:#006089;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;display:inline-block;margin:4px 6px 4px 0;">{a}</span>' for a in profile['allergens'])
