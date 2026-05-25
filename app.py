@@ -233,12 +233,13 @@ def inject_custom_css():
 
     div[data-testid="stTextInput"]:has(input[aria-label="js_data_exchange"]),
     div[data-testid="stTextInput"]:has(input[id*="js_data_input"]) {
-        height: 0 !important;
-        min-height: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        width: 1px !important;
+        min-height: auto !important;
         padding: 0 !important;
         margin: 0 !important;
-        opacity: 0 !important;
-        overflow: hidden !important;
     }
 
     .main-layout {
@@ -1024,6 +1025,21 @@ with col_main:
                 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
                 <script>
                 (function() {
+                    var pdoc = window.parent.document;
+                    var pwin = window.parent;
+
+                    function sendAction(s) {
+                        var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
+                        if (i) {
+                            i.focus();
+                            var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
+                            setter.call(i, s + '&ts=' + Date.now());
+                            i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
+                            i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
+                            i.blur();
+                        }
+                    }
+
                     function startScanner() {
                         var lastCode = '';
                         var msgs = document.getElementById('scan-msg');
@@ -1044,19 +1060,16 @@ with col_main:
                                 if (decodedText !== lastCode) {
                                     lastCode = decodedText;
                                     if (msgs) msgs.textContent = 'Odczytano kod, sprawdzam...';
-                                    scanner.stop().then(function() {
-                                        window.parent.location.search = '?barcode=' + encodeURIComponent(decodedText);
-                                    }).catch(function() {
-                                        window.parent.location.search = '?cam_off=1';
-                                    });
+                                    sendAction('action=barcode&code=' + encodeURIComponent(decodedText));
                                 }
                             },
                             function() {}
                         ).catch(function(err) {
                             if (msgs) msgs.textContent = 'Nie mozna uruchomic kamery.';
-                            setTimeout(function() { window.parent.location.search = '?cam_off=1'; }, 3000);
+                            sendAction('action=cam_off');
                         });
                     }
+
                     if (typeof Html5Qrcode === 'undefined') {
                         setTimeout(startScanner, 500);
                     } else {
@@ -1065,9 +1078,11 @@ with col_main:
                 })();
                 </script>
                 """, height=400)
-                if st.button("ZAMKNIJ KAMERĘ", key="btn_cam_close", use_container_width=True):
-                    st.session_state.show_camera = False
-                    st.rerun()
+                col_w1, col_w2, col_w3 = st.columns([1, 2, 1])
+                with col_w2:
+                    if st.button("Wróć", key="btn_cam_back", use_container_width=True):
+                        st.session_state.show_camera = False
+                        st.rerun()
 
             # ── Wynik skanowania ──
             if st.session_state.get("scan_result") and not st.session_state.show_camera:
