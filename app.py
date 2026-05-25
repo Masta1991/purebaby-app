@@ -771,12 +771,8 @@ if qp.get("cam_off") == "1":
 # Kamera: zeskanowano kod
 barcode_qp = qp.get("barcode")
 if barcode_qp and st.session_state.child_profile:
-    name, ingredients = fetch_product(barcode_qp)
-    if name is None:
-        st.session_state.scan_result = ("not_found", None, barcode_qp, "")
-    else:
-        result, found, pname = check_allergens(name, ingredients, st.session_state.child_profile["allergens"])
-        st.session_state.scan_result = (result, found, pname, ingredients)
+    safe, nazwa, wykryte = sprawdz_sklad(barcode_qp, st.session_state.child_profile["allergens"])
+    st.session_state.scan_result = (safe, nazwa, wykryte)
     st.session_state.show_camera = False
     st.query_params.clear()
     st.rerun()
@@ -812,12 +808,8 @@ if js_data and js_data != st.session_state.last_js_data:
         elif action == "barcode":
             barcode = parts.get("code", "")
             if barcode and st.session_state.child_profile:
-                name, ingredients = fetch_product(barcode)
-                if name is None:
-                    st.session_state.scan_result = ("not_found", None, barcode, "")
-                else:
-                    result, found, pname = check_allergens(name, ingredients, st.session_state.child_profile["allergens"])
-                    st.session_state.scan_result = (result, found, pname, ingredients)
+                safe, nazwa, wykryte = sprawdz_sklad(barcode, st.session_state.child_profile["allergens"])
+                st.session_state.scan_result = (safe, nazwa, wykryte)
                 st.session_state.show_camera = False
                 st.rerun()
         elif action == "cam_off":
@@ -897,14 +889,14 @@ with col_side:
 # ══════════════════════════════════════════════════════════════════════════════
 
 ALLERGEN_SYNONYMS = {
-    "Mleko krowie (laktoza, kazeina)": ["mleko","laktoza","kazeina","serwatka","masło","mleczna","mleczne","mleczny","śmietana","twaróg","ser","mlekiem","mlekiem"],
-    "Orzechy (ziemne, drzewne)": ["orzech","orzechy","orzechów","orzechami","orzeszki","migdał","migdały","neregowca","pistacje","laskowe","ziemne"],
-    "Gluten/Pszenica": ["gluten","pszenica","pszenny","pszenna","jęczmień","żyto","mąka","owsiana","owsiane","semolina","mąki"],
-    "Jaja": ["jaj","jaja","jajka","jajko","jajeczny","jajeczne","żółtko","żółtka","białko"],
-    "Soja": ["soja","sojowe","sojowy","sojowa","soi","tofu","edamame","lecytyna"],
-    "Skorupiaki": ["krewetki","krab","homar","homara","skorupiak","skorupiaki"],
-    "Ryby": ["ryba","ryby","łosoś","tuńczyk","dorsz","śledź","sardynki","rybny","rybne","łososia"],
-    "Sezam": ["sezam","sezamu","sezamowy","sezamowe"],
+    "Mleko krowie (laktoza, kazeina)": ["mleko","laktoza","kazeina","serwatka","masło","mleczna","mleczne","mleczny","śmietana","twaróg","ser","mlekiem","serwatki","maślanka","mlecznych"],
+    "Orzechy (ziemne, drzewne)": ["orzech","orzechy","orzechów","orzechami","orzeszki","migdał","migdały","neregowca","pistacje","laskowe","ziemne","arachidowe","nerkowca"],
+    "Gluten/Pszenica": ["gluten","pszenica","pszenny","pszenna","jęczmień","żyto","mąka","owsiana","owsiane","semolina","mąki","pszennej","glutenowa","glutenowe"],
+    "Jaja": ["jaj","jaja","jajka","jajko","jajeczny","jajeczne","żółtko","żółtka","białko","jajek","jajami"],
+    "Soja": ["soja","sojowe","sojowy","sojowa","soi","tofu","edamame","lecytyna sojowa"],
+    "Skorupiaki": ["krewetki","krab","homar","homara","skorupiak","skorupiaki","krewetek","kryla","langusty"],
+    "Ryby": ["ryba","ryby","łosoś","tuńczyk","dorsz","śledź","sardynki","rybny","rybne","łososia","rybiego","dorsza"],
+    "Sezam": ["sezam","sezamu","sezamowy","sezamowe","sezamowa","sezamem"],
     "Konserwanty": ["konserwant","benzoesan","sorbinian","azotan","siarczyn","siarczyny","glutaminian","E2",
         "E210","E211","E212","E213","E220","E221","E222","E223","E224","E225","E226","E227","E228",
         "E249","E250","E251","E252"],
@@ -912,45 +904,67 @@ ALLERGEN_SYNONYMS = {
         "E122","E124","E129","E131","E132","E133","E142","E151","E155"],
 }
 
-def check_allergens(product_name, ingredients_text, child_allergens):
-    if not child_allergens:
-        return "no_profile", None, product_name
+# Kategorie produktów nieodpowiednich dla dzieci
+UNSAFE_CATEGORIES = [
+    "alkohol", "alkohole", "piwo", "wino", "wódka", "whisky", "whiskey", "rum", "gin", "likier", "szampan",
+    "papierosy", "tytoń", "papieros", "cygara", "cygaro", "e-papieros",
+    "napoje energetyzujące", "energetyk", "energy drink",
+    "kawa", "kawy", "espresso", "cappuccino",
+]
 
-    if not ingredients_text:
-        return "no_ingredients", None, product_name
-
-    text = ingredients_text.lower()
-
-    found = []
-    for allergen in child_allergens:
-        synonyms = ALLERGEN_SYNONYMS.get(allergen, [allergen.lower()])
-        for syn in synonyms:
-            if syn in text:
-                found.append(allergen)
-                break
-
-    return "found" if found else "safe", found, product_name
-
-def fetch_product(barcode):
+def sprawdz_sklad(kod_ean, alergie_dziecka):
+    """Zwraca (bezpieczny:bool, nazwa_produktu:str, wykryte_skladniki:list)"""
     import urllib.request
     try:
-        url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+        url = f"https://world.openfoodfacts.org/api/v2/product/{kod_ean}.json"
         req = urllib.request.Request(url, headers={"User-Agent": "PureBaby/1.0"})
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read().decode())
-        if data.get("status") == 1:
-            p = data.get("product", {})
-            name = p.get("product_name") or p.get("generic_name") or "Nieznany produkt"
-            ingredients = (
-                p.get("ingredients_text_pl") or
-                p.get("ingredients_text") or
-                p.get("ingredients_text_en") or
-                ""
-            )
-            return name, ingredients
+        if data.get("status") != 1:
+            return False, "Nieznany produkt", ["Produkt nie istnieje w bazie"]
+
+        p = data.get("product", {})
+        name = p.get("product_name") or p.get("generic_name") or "Nieznany produkt"
+        ingredients = (
+            p.get("ingredients_text_pl") or
+            p.get("ingredients_text") or
+            p.get("ingredients_text_en") or
+            ""
+        )
+
+        # Sprawdź kategorie nieodpowiednie dla dzieci
+        categories = p.get("categories_tags", []) or p.get("categories", "") or ""
+        if isinstance(categories, str):
+            categories_lower = categories.lower()
+        else:
+            categories_lower = " ".join(categories).lower()
+        for unsafe in UNSAFE_CATEGORIES:
+            if unsafe in categories_lower or unsafe in name.lower():
+                return False, name, [f"Produkt nieodpowiedni dla dziecka ({unsafe})"]
+
+        # Sprawdź alergeny
+        if not ingredients:
+            return None, name, []  # None = brak składu, nie wiadomo
+
+        text = ingredients.lower()
+        text = text.replace("ł", "l").replace("ą", "a").replace("ę", "e").replace("ś", "s").replace("ć", "c").replace("ń", "n").replace("ó", "o").replace("ż", "z").replace("ź", "z")
+
+        found = []
+        for allergen in alergie_dziecka:
+            synonyms = ALLERGEN_SYNONYMS.get(allergen, [allergen.lower()])
+            for syn in synonyms:
+                if syn in text:
+                    found.append(allergen)
+                    break
+
+        if found:
+            return False, name, found
+        return True, name, []
     except Exception:
-        pass
-    return None, None
+        return False, "Błąd połączenia", ["Nie można pobrać danych produktu"]
+
+
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
@@ -1090,31 +1104,29 @@ with col_main:
 
             # ── Wynik skanowania ──
             if st.session_state.get("scan_result") and not st.session_state.show_camera:
-                result, found, pname, ingredients = st.session_state.scan_result
-                if result == "safe":
+                safe, nazwa, wykryte = st.session_state.scan_result
+                if safe is True:
                     st.markdown(f"""
                     <div style="background:#dcfce7;border:1px solid #86efac;border-radius:16px;padding:24px;margin-top:16px;">
                         <div style="font-size:20px;font-weight:800;color:#166534;">Produkt bezpieczny dla {profile['name']}!</div>
-                        <p style="color:#166534;margin-top:8px;">W produkcie <strong>{pname}</strong> nie znaleźliśmy składników, na które {profile['name']} ma alergię.</p>
+                        <p style="color:#166534;margin-top:8px;">W produkcie <strong>{nazwa}</strong> nie znaleźliśmy składników, na które {profile['name']} ma alergię.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                elif result == "found":
-                    allergens_html = ", ".join(f"<strong>{a}</strong>" for a in found)
+                elif safe is False:
+                    wykryte_html = ", ".join(f"<strong>{w}</strong>" for w in wykryte)
                     st.markdown(f"""
                     <div style="background:#fecaca;border:1px solid #f87171;border-radius:16px;padding:24px;margin-top:16px;">
                         <div style="font-size:20px;font-weight:800;color:#991b1b;">UWAGA! Produkt NIEBEZPIECZNY dla {profile['name']}!</div>
-                        <p style="color:#991b1b;margin-top:8px;">W składzie produktu <strong>{pname}</strong> wykryto: {allergens_html}.</p>
+                        <p style="color:#991b1b;margin-top:8px;">Wykryto: {wykryte_html}. Produkt: <strong>{nazwa}</strong>.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                elif result == "no_ingredients":
+                else:
                     st.markdown(f"""
                     <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:16px;padding:24px;margin-top:16px;">
-                        <div style="font-size:18px;font-weight:800;color:#92400e;">Brak składu</div>
-                        <p style="color:#92400e;margin-top:8px;">Produkt <strong>{pname}</strong> został znaleziony, ale nie posiada listy składników w bazie.</p>
+                        <div style="font-size:18px;font-weight:800;color:#92400e;">Brak informacji</div>
+                        <p style="color:#92400e;margin-top:8px;">Produkt <strong>{nazwa}</strong> nie ma listy składników w bazie.</p>
                     </div>
                     """, unsafe_allow_html=True)
-                elif result == "not_found":
-                    st.warning(f"Nie znaleziono produktu dla kodu: {pname}")
                 if st.button("WYCZYŚĆ WYNIK", key="btn_clear_scan"):
                     st.session_state.scan_result = None
                     st.rerun()
