@@ -777,6 +777,10 @@ if "old_profile" not in st.session_state:
     st.session_state.old_profile = None
 if "scanned_code" not in st.session_state:
     st.session_state.scanned_code = None
+if "scan_result" not in st.session_state:
+    st.session_state.scan_result = None
+if "scan_showing" not in st.session_state:
+    st.session_state.scan_showing = False
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. ACTION PROCESSOR
@@ -816,6 +820,18 @@ if js_data and js_data != st.session_state.last_js_data:
             if code:
                 st.session_state.scanned_code = code
                 st.session_state.page = "home"
+                st.session_state.scan_showing = True
+                # Sprawdź produkt
+                profile = st.session_state.child_profile
+                allergens = profile.get("allergens", []) if profile else []
+                safe, name, found = sprawdz_sklad(code, allergens)
+                st.session_state.scan_result = {
+                    "code": code,
+                    "name": name,
+                    "safe": safe,
+                    "found": found,
+                    "allergens": allergens
+                }
                 st.rerun()
         elif action == "cam_off":
             if "scanned_code" in st.session_state:
@@ -1087,7 +1103,7 @@ def render_product_carousel():
         background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
         border-radius: 24px;
         padding: 24px 20px;
-        margin: 8px 0 20px 0;
+        margin: 0 0 10px 0;
         border: 1px solid rgba(0, 96, 137, 0.08);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -1282,7 +1298,55 @@ with col_main:
             </div>
             """, unsafe_allow_html=True)
 
-        # ── Karuzela produktowa PureBaby — zawsze widoczna na stronie głównej ──
+        # ── Popup wyniku skanowania ──
+        if st.session_state.scan_showing and st.session_state.scan_result:
+            result = st.session_state.scan_result
+            if result["safe"] is True:
+                bg_color = "#dcfce7"
+                border_color = "#86efac"
+                text_color = "#166534"
+                icon = "✓"
+                title = "Produkt bezpieczny!"
+            elif result["safe"] is False:
+                bg_color = "#fecaca"
+                border_color = "#f87171"
+                text_color = "#991b1b"
+                icon = "✕"
+                title = "Produkt NIEBEZPIECZNY!"
+            else:
+                bg_color = "#fef3c7"
+                border_color = "#fcd34d"
+                text_color = "#92400e"
+                icon = "!"
+                title = "Brak informacji"
+            
+            found_html = ""
+            if result["found"]:
+                found_html = '<div style="margin-top:8px;font-weight:600;">Wykryto: ' + ', '.join(result["found"]) + '</div>'
+            
+            allergens_html = ""
+            if result["allergens"]:
+                allergens_html = '<div style="margin-top:4px;font-size:12px;color:#6B7B8D;">Alergeny dziecka: ' + ', '.join(result["allergens"]) + '</div>'
+            
+            st.markdown(f"""
+            <div style="background:{bg_color};border:2px solid {border_color};border-radius:16px;padding:20px;margin:8px 0 12px 0;position:relative;">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <div style="width:36px;height:36px;border-radius:50%;background:{text_color};color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;flex-shrink:0;">{icon}</div>
+                    <div>
+                        <div style="font-size:16px;font-weight:700;color:{text_color};">{title}</div>
+                        <div style="font-size:13px;color:{text_color};opacity:0.8;">{result["name"]}</div>
+                    </div>
+                </div>
+                {found_html}
+                {allergens_html}
+                <div style="margin-top:12px;text-align:right;">
+                    <button onclick="this.parentElement.parentElement.style.display='none'" style="background:{text_color};color:#ffffff;border:none;border-radius:8px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Zamknij</button>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.session_state.scan_showing = False
+
+        # ── Karuzela produktowa PureBaby — zawsze widoczna na stronie głównej ─
         render_product_carousel()
 
     elif st.session_state.page == "scanner":
