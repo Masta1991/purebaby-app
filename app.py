@@ -657,11 +657,13 @@ def inject_custom_css():
         line-height: 1.4 !important;
     }
 
-    /* Clean multiselect — wszystkie kolory wymuszone */
+    /* Clean multiselect */
+    .stMultiSelect *,
     div[data-testid="stMultiSelect"] * {
         color: #1B2B3A !important;
     }
-    div[data-testid="stMultiSelect"] > label,
+    .stMultiSelect label,
+    div[data-testid="stMultiSelect"] > label:first-child,
     div[data-testid="stMultiSelect"] label {
         color: #1B2B3A !important;
         font-family: 'Nunito', sans-serif !important;
@@ -669,25 +671,36 @@ def inject_custom_css():
         font-weight: 600 !important;
         margin-bottom: 4px !important;
     }
-    div[data-testid="stMultiSelect"] div[data-baseweb="select"] {
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"],
+    .stMultiSelect [data-baseweb="select"] {
         background: #ffffff !important;
         border: 1px solid #d0d5dd !important;
         border-radius: 12px !important;
         font-family: 'Nunito', sans-serif !important;
     }
-    div[data-testid="stMultiSelect"] div[data-baseweb="select"]:hover {
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"]:hover,
+    .stMultiSelect [data-baseweb="select"]:hover {
         border-color: #006089 !important;
     }
-    div[data-testid="stMultiSelect"] div[data-baseweb="select"] input {
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"] input,
+    .stMultiSelect [data-baseweb="select"] input {
         color: #1B2B3A !important;
         background: transparent !important;
+        font-family: 'Nunito', sans-serif !important;
     }
-    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] {
+    div[data-testid="stMultiSelect"] input::placeholder,
+    .stMultiSelect [data-baseweb="select"] input::placeholder {
+        color: #6B7B8D !important;
+        font-family: 'Nunito', sans-serif !important;
+    }
+    div[data-testid="stMultiSelect"] div[data-baseweb="tag"],
+    .stMultiSelect [data-baseweb="tag"] {
         background: rgba(0,96,137,0.08) !important;
         color: #006089 !important;
         border-radius: 8px !important;
     }
-    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] span {
+    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] span,
+    .stMultiSelect [data-baseweb="tag"] span {
         color: #006089 !important;
     }
 </style>
