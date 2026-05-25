@@ -1304,18 +1304,39 @@ st.markdown("""
 (function() {
     if (window._pb_msg_listener) return;
     window._pb_msg_listener = true;
+
+    window.sendActionToStreamlit = function(s) {
+        var i = document.querySelector('input[aria-label="js_data_exchange"]');
+        if (i) {
+            i.focus();
+            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+            setter.call(i, s + '&ts=' + Date.now());
+            i.dispatchEvent(new Event('input', { bubbles: true }));
+            i.dispatchEvent(new Event('change', { bubbles: true }));
+            i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            i.blur();
+            console.log('[PureBaby] sendActionToStreamlit OK:', s);
+        } else {
+            console.warn('[PureBaby] input not found, falling back to URL reload');
+        }
+    };
+
     window.addEventListener('message', function(e) {
         var d = e.data;
         if (!d) return;
+        console.log('[PureBaby] message received:', d);
         if (d.type === 'barcode' && d.code) {
-            if (typeof sendActionToStreamlit === 'function') {
+            var i = document.querySelector('input[aria-label="js_data_exchange"]');
+            if (i) {
                 sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(d.code));
+            } else {
+                var url = new URL(window.location);
+                url.searchParams.set('barcode', d.code);
+                window.location.href = url.toString();
             }
         }
         if (d.type === 'cam_off') {
-            if (typeof sendActionToStreamlit === 'function') {
-                sendActionToStreamlit('action=cam_off');
-            }
+            sendActionToStreamlit('action=cam_off');
         }
     });
 })();
