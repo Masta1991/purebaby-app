@@ -989,152 +989,242 @@ with col_main:
             </div>
             """, unsafe_allow_html=True)
 
-            # ── Skaner ──
-            if not st.session_state.show_camera:
-                st.markdown("""
-                <div class="content-card" style="padding:28px 24px;">
-                    <div style="text-align:center;margin-bottom:20px;">
-                        <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;">
-                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="#006089" stroke-width="2" fill="none">
-                                <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
-                                <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
-                                <line x1="7" y1="12" x2="17" y2="12"></line>
-                            </svg>
-                            <span style="font-size:16px;font-weight:700;color:#1B2B3A;">Zeskanuj kod kreskowy</span>
-                        </div>
-                        <div class="scanner-btn" data-action="action=cam_on" style="display:inline-block;background:#006089;color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">
-                            URUCHOM KAMERĘ
-                        </div>
+            # ── Skaner — samodzielnym komponentem (zero komunikacji z parentem) ──
+            import json as _json
+            child_allergens_json = _json.dumps(st.session_state.child_profile.get("allergens", []), ensure_ascii=False)
+            allergen_synonyms_json = _json.dumps(ALLERGEN_SYNONYMS, ensure_ascii=False)
+            unsafe_categories_json = _json.dumps(UNSAFE_CATEGORIES, ensure_ascii=False)
+
+            st.components.v1.html(f"""
+            <style>
+            * {{ box-sizing: border-box; }}
+            body {{ font-family: 'Nunito', sans-serif; margin: 0; padding: 16px; background: #f8f9fa; }}
+            .card {{ background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }}
+            .center {{ text-align: center; }}
+            .btn {{ display: inline-block; background: #006089; color: #fff; border: none; border-radius: 14px; padding: 14px 32px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; }}
+            .btn-sm {{ padding: 12px 20px; font-size: 14px; border-radius: 12px; }}
+            .input-row {{ display: flex; gap: 8px; margin-top: 6px; }}
+            .input-row input {{ flex: 1; padding: 12px 16px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 15px; font-family: 'Nunito', sans-serif; color: #1B2B3A; outline: none; background: #fff; }}
+            .input-row .scan-btn {{ display: none; align-items: center; padding: 12px 20px; background: #006089; color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; white-space: nowrap; }}
+            .input-row .scan-btn.visible {{ display: flex; }}
+            #reader {{ width: 100%; max-width: 400px; margin: 0 auto; border-radius: 16px; overflow: hidden; }}
+            #scan-msg {{ text-align: center; color: #6B7B8D; margin-top: 12px; font-size: 14px; }}
+            #result {{ margin-top: 16px; border-radius: 16px; padding: 20px; display: none; }}
+            #result.safe {{ background: #dcfce7; border: 2px solid #86efac; display: block; }}
+            #result.danger {{ background: #fecaca; border: 2px solid #f87171; display: block; }}
+            #result.warning {{ background: #fef3c7; border: 2px solid #fcd34d; display: block; }}
+            #result h3 {{ margin: 0 0 8px 0; font-size: 18px; }}
+            #result p {{ margin: 4px 0; font-size: 14px; }}
+            .section-label {{ font-size: 14px; font-weight: 600; color: #1B2B3A; margin-bottom: 6px; }}
+            .back-btn {{ display: block; width: 100%; max-width: 400px; margin: 16px auto 0; padding: 14px; background: #006089; color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; text-align: center; }}
+            .hidden {{ display: none !important; }}
+            </style>
+
+            <!-- Karta skanera -->
+            <div id="scanner-card" class="card">
+                <div class="center" style="margin-bottom:20px;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="#006089" stroke-width="2" fill="none">
+                            <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
+                            <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
+                            <line x1="7" y1="12" x2="17" y2="12"></line>
+                        </svg>
+                        <span style="font-size:16px;font-weight:700;color:#1B2B3A;">Zeskanuj kod kreskowy</span>
                     </div>
-                    <div style="text-align:left;">
-                        <div style="font-size:14px;font-weight:600;color:#1B2B3A;margin-bottom:6px;">Wpisz kod ręcznie</div>
-                        <div style="display:flex;gap:8px;">
-                            <input type="text" id="manual-barcode" placeholder="np. 5901234567890" 
-                                style="flex:1;padding:12px 16px;border:1px solid #d0d5dd;border-radius:12px;font-size:15px;font-family:'Nunito',sans-serif;color:#1B2B3A;outline:none;background:#fff;">
-                            <span id="scan-manual-btn" style="display:none;align-items:center;padding:12px 20px;background:#006089;color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;">SKANUJ</span>
-                        </div>
+                    <button class="btn" id="btn-cam">URUCHOM KAMERĘ</button>
+                </div>
+                <div>
+                    <div class="section-label">Wpisz kod ręcznie</div>
+                    <div class="input-row">
+                        <input type="text" id="manual-barcode" placeholder="np. 5901234567890">
+                        <span class="scan-btn" id="scan-manual-btn">SKANUJ</span>
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
 
-                st.components.v1.html("""
-                <script>
-                (function() {
-                    var pdoc = window.parent.document;
-                    var pwin = window.parent;
-                    var inp = pdoc.getElementById('manual-barcode');
-                    var btn = pdoc.getElementById('scan-manual-btn');
-                    if (!inp || !btn) return;
+            <!-- Kamera -->
+            <div id="camera-section" class="hidden">
+                <div id="reader"></div>
+                <div id="scan-msg">Skieruj kamerę na kod kreskowy...</div>
+                <div id="result"></div>
+                <button class="back-btn" id="btn-back">Wróć</button>
+            </div>
 
-                    function doScan(val) {
-                        var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
-                        if (i) {
-                            i.focus();
-                            var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
-                            setter.call(i, 'action=barcode&code=' + encodeURIComponent(val) + '&ts=' + Date.now());
-                            i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
-                            i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
-                            i.blur();
-                        }
-                    }
+            <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+            <script>
+            (function() {{
+                var CHILD_ALLERGENS = {child_allergens_json};
+                var ALLERGEN_SYNONYMS = {allergen_synonyms_json};
+                var UNSAFE_CATEGORIES = {unsafe_categories_json};
 
-                    inp.addEventListener('input', function() {
-                        btn.style.display = inp.value.trim() ? 'flex' : 'none';
-                    });
-                    inp.addEventListener('keydown', function(e) {
-                        if (e.key === 'Enter' && inp.value.trim()) {
-                            doScan(inp.value.trim());
-                        }
-                    });
-                    btn.addEventListener('click', function() {
-                        if (inp.value.trim()) {
-                            doScan(inp.value.trim());
-                        }
-                    });
-                })();
-                </script>
-                """, height=0)
-            else:
-                st.components.v1.html("""
-                <div id="reader" style="width:100%;max-width:400px;margin:16px auto;"></div>
-                <div id="scan-msg" style="text-align:center;color:#6B7B8D;font-family:'Nunito',sans-serif;margin-top:8px;">Skieruj kamerę na kod kreskowy...</div>
-                <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-                <script>
-                (function() {
-                    function startScanner() {
-                        var lastCode = '';
-                        var msgs = document.getElementById('scan-msg');
-                        var scanner = new Html5Qrcode("reader");
-                        scanner.start(
-                            { facingMode: "environment" },
-                            { fps: 10, qrbox: { width: 300, height: 120 }, formatsToSupport: [ 
-                                Html5QrcodeSupportedFormats.EAN_8,
-                                Html5QrcodeSupportedFormats.EAN_13,
-                                Html5QrcodeSupportedFormats.UPC_A,
-                                Html5QrcodeSupportedFormats.UPC_E,
-                                Html5QrcodeSupportedFormats.CODE_128,
-                                Html5QrcodeSupportedFormats.CODE_39,
-                                Html5QrcodeSupportedFormats.ITF,
-                                Html5QrcodeSupportedFormats.CODABAR
-                            ]},
-                            function(decodedText) {
-                                if (decodedText !== lastCode) {
-                                    lastCode = decodedText;
-                                    if (msgs) msgs.textContent = 'Odczytano kod, analizuję...';
-                                    scanner.stop();
-                                    localStorage.setItem('purebaby_barcode', decodedText);
-                                    localStorage.setItem('purebaby_ts', Date.now().toString());
-                                }
-                            },
-                            function() {}
-                        ).catch(function(err) {
-                            if (msgs) msgs.textContent = 'Nie można uruchomić kamery.';
-                            localStorage.setItem('purebaby_cam_off', '1');
-                            localStorage.setItem('purebaby_ts', Date.now().toString());
-                        });
-                    }
-                    if (typeof Html5Qrcode === 'undefined') {
+                var scannerCard = document.getElementById('scanner-card');
+                var cameraSection = document.getElementById('camera-section');
+                var btnCam = document.getElementById('btn-cam');
+                var btnBack = document.getElementById('btn-back');
+                var manualInput = document.getElementById('manual-barcode');
+                var manualBtn = document.getElementById('scan-manual-btn');
+                var scanMsg = document.getElementById('scan-msg');
+                var resultDiv = document.getElementById('result');
+
+                function normalizeText(text) {{
+                    return text.toLowerCase()
+                        .replace(/ł/g,'l').replace(/ą/g,'a').replace(/ę/g,'e')
+                        .replace(/ś/g,'s').replace(/ć/g,'c').replace(/ń/g,'n')
+                        .replace(/ó/g,'o').replace(/ż/g,'z').replace(/ź/g,'z');
+                }}
+
+                function checkProduct(barcode) {{
+                    scanMsg.textContent = 'Pobieram dane produktu...';
+                    resultDiv.className = '';
+                    resultDiv.style.display = 'none';
+
+                    fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(barcode) + '.json', {{
+                        headers: {{ 'User-Agent': 'PureBaby/1.0' }}
+                    }})
+                    .then(function(r) {{ return r.json(); }})
+                    .then(function(data) {{
+                        if (data.status !== 1) {{
+                            resultDiv.className = 'danger';
+                            resultDiv.innerHTML = '<h3 style="color:#991b1b;">Nie znaleziono produktu</h3><p style="color:#991b1b;">Produkt o kodzie <strong>' + barcode + '</strong> nie istnieje w bazie.</p>';
+                            scanMsg.textContent = '';
+                            return;
+                        }}
+
+                        var p = data.product || {{}};
+                        var name = p.product_name || p.generic_name || 'Nieznany produkt';
+                        var ingredients = p.ingredients_text_pl || p.ingredients_text || p.ingredients_text_en || '';
+                        var categories = p.categories_tags || [];
+                        var catsStr = Array.isArray(categories) ? categories.join(' ').toLowerCase() : String(categories).toLowerCase();
+
+                        for (var i = 0; i < UNSAFE_CATEGORIES.length; i++) {{
+                            var uc = UNSAFE_CATEGORIES[i];
+                            if (catsStr.indexOf(uc) !== -1 || name.toLowerCase().indexOf(uc) !== -1) {{
+                                resultDiv.className = 'danger';
+                                resultDiv.innerHTML = '<h3 style="color:#991b1b;">Produkt NIEBEZPIECZNY!</h3><p style="color:#991b1b;">Produkt nieodpowiedni dla dziecka: <strong>' + name + '</strong></p><p style="color:#991b1b;">Kategoria: ' + uc + '</p>';
+                                scanMsg.textContent = '';
+                                return;
+                            }}
+                        }}
+
+                        if (!ingredients) {{
+                            resultDiv.className = 'warning';
+                            resultDiv.innerHTML = '<h3 style="color:#92400e;">Brak informacji</h3><p style="color:#92400e;">Produkt <strong>' + name + '</strong> nie ma listy składników w bazie.</p>';
+                            scanMsg.textContent = '';
+                            return;
+                        }}
+
+                        var text = normalizeText(ingredients);
+                        var found = [];
+                        for (var a = 0; a < CHILD_ALLERGENS.length; a++) {{
+                            var allergen = CHILD_ALLERGENS[a];
+                            var synonyms = ALLERGEN_SYNONYMS[allergen] || [allergen.toLowerCase()];
+                            for (var s = 0; s < synonyms.length; s++) {{
+                                if (text.indexOf(synonyms[s]) !== -1) {{
+                                    found.push(allergen);
+                                    break;
+                                }}
+                            }}
+                        }}
+
+                        if (found.length > 0) {{
+                            resultDiv.className = 'danger';
+                            resultDiv.innerHTML = '<h3 style="color:#991b1b;">UWAGA! Produkt NIEBEZPIECZNY!</h3><p style="color:#991b1b;">Wykryto: <strong>' + found.join(', ') + '</strong></p><p style="color:#991b1b;">Produkt: <strong>' + name + '</strong></p>';
+                        }} else {{
+                            resultDiv.className = 'safe';
+                            resultDiv.innerHTML = '<h3 style="color:#166534;">Produkt bezpieczny!</h3><p style="color:#166534;">W produkcie <strong>' + name + '</strong> nie znaleziono składników, na które dziecko ma alergię.</p>';
+                        }}
+                        scanMsg.textContent = '';
+                    }})
+                    .catch(function(err) {{
+                        resultDiv.className = 'danger';
+                        resultDiv.innerHTML = '<h3 style="color:#991b1b;">Błąd połączenia</h3><p style="color:#991b1b;">Nie można pobrać danych produktu.</p>';
+                        scanMsg.textContent = '';
+                    }});
+                }}
+
+                function showCamera() {{
+                    scannerCard.classList.add('hidden');
+                    cameraSection.classList.remove('hidden');
+                    resultDiv.className = '';
+                    resultDiv.style.display = 'none';
+                    scanMsg.textContent = 'Skieruj kamerę na kod kreskowy...';
+                    startScanner();
+                }}
+
+                function showCard() {{
+                    cameraSection.classList.add('hidden');
+                    scannerCard.classList.remove('hidden');
+                    if (window._scanner) {{
+                        try {{ window._scanner.stop(); }} catch(e) {{}}
+                    }}
+                }}
+
+                function startScanner() {{
+                    var lastCode = '';
+                    if (typeof Html5Qrcode === 'undefined') {{
                         setTimeout(startScanner, 500);
-                    } else {
-                        startScanner();
-                    }
-                })();
-                </script>
-                """, height=400)
-                col_w1, col_w2, col_w3 = st.columns([1, 2, 1])
-                with col_w2:
-                    if st.button("Wróć", key="btn_cam_back", use_container_width=True):
-                        st.session_state.show_camera = False
-                        st.rerun()
+                        return;
+                    }}
+                    if (window._scanner) {{
+                        try {{ window._scanner.stop(); }} catch(e) {{}}
+                    }}
+                    window._scanner = new Html5Qrcode("reader");
+                    window._scanner.start(
+                        {{ facingMode: "environment" }},
+                        {{ fps: 10, qrbox: {{ width: 300, height: 120 }}, formatsToSupport: [
+                            Html5QrcodeSupportedFormats.EAN_8,
+                            Html5QrcodeSupportedFormats.EAN_13,
+                            Html5QrcodeSupportedFormats.UPC_A,
+                            Html5QrcodeSupportedFormats.UPC_E,
+                            Html5QrcodeSupportedFormats.CODE_128,
+                            Html5QrcodeSupportedFormats.CODE_39,
+                            Html5QrcodeSupportedFormats.ITF,
+                            Html5QrcodeSupportedFormats.CODABAR
+                        ]}},
+                        function(decodedText) {{
+                            if (decodedText !== lastCode) {{
+                                lastCode = decodedText;
+                                scanMsg.textContent = 'Odczytano kod, analizuję...';
+                                window._scanner.stop();
+                                checkProduct(decodedText);
+                            }}
+                        }},
+                        function() {{}}
+                    ).catch(function(err) {{
+                        scanMsg.textContent = 'Nie można uruchomić kamery.';
+                    }});
+                }}
 
-            # ── Wynik skanowania ──
-            if st.session_state.get("scan_result") and not st.session_state.show_camera:
-                safe, nazwa, wykryte = st.session_state.scan_result
-                if safe is True:
-                    st.markdown(f"""
-                    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:16px;padding:24px;margin-top:16px;">
-                        <div style="font-size:20px;font-weight:800;color:#166534;">Produkt bezpieczny dla {profile['name']}!</div>
-                        <p style="color:#166534;margin-top:8px;">W produkcie <strong>{nazwa}</strong> nie znaleźliśmy składników, na które {profile['name']} ma alergię.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                elif safe is False:
-                    wykryte_html = ", ".join(f"<strong>{w}</strong>" for w in wykryte)
-                    st.markdown(f"""
-                    <div style="background:#fecaca;border:1px solid #f87171;border-radius:16px;padding:24px;margin-top:16px;">
-                        <div style="font-size:20px;font-weight:800;color:#991b1b;">UWAGA! Produkt NIEBEZPIECZNY dla {profile['name']}!</div>
-                        <p style="color:#991b1b;margin-top:8px;">Wykryto: {wykryte_html}. Produkt: <strong>{nazwa}</strong>.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:16px;padding:24px;margin-top:16px;">
-                        <div style="font-size:18px;font-weight:800;color:#92400e;">Brak informacji</div>
-                        <p style="color:#92400e;margin-top:8px;">Produkt <strong>{nazwa}</strong> nie ma listy składników w bazie.</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                if st.button("WYCZYŚĆ WYNIK", key="btn_clear_scan"):
-                    st.session_state.scan_result = None
-                    st.rerun()
+                // Manual input
+                manualInput.addEventListener('input', function() {{
+                    if (manualInput.value.trim()) {{
+                        manualBtn.classList.add('visible');
+                    }} else {{
+                        manualBtn.classList.remove('visible');
+                    }}
+                }});
+                manualInput.addEventListener('keydown', function(e) {{
+                    if (e.key === 'Enter' && manualInput.value.trim()) {{
+                        scannerCard.classList.add('hidden');
+                        cameraSection.classList.remove('hidden');
+                        checkProduct(manualInput.value.trim());
+                    }}
+                }});
+                manualBtn.addEventListener('click', function() {{
+                    if (manualInput.value.trim()) {{
+                        scannerCard.classList.add('hidden');
+                        cameraSection.classList.remove('hidden');
+                        checkProduct(manualInput.value.trim());
+                    }}
+                }});
+
+                // Buttons
+                btnCam.addEventListener('click', showCamera);
+                btnBack.addEventListener('click', showCard);
+            }})();
+            </script>
+            """, height=500)
+
         else:
             st.markdown("""
             <div class="content-card">
