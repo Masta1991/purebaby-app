@@ -753,32 +753,11 @@ if "child_profile" not in st.session_state:
     st.session_state.child_profile = load_profile()
 if "old_profile" not in st.session_state:
     st.session_state.old_profile = None
-if "scan_result" not in st.session_state:
-    st.session_state.scan_result = None
-if "show_camera" not in st.session_state:
-    st.session_state.show_camera = False
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. ACTION PROCESSOR
 # ══════════════════════════════════════════════════════════════════════════════
 qp = st.query_params
-
-# Kamera: off
-if qp.get("cam_off") == "1":
-    st.session_state.show_camera = False
-    st.query_params.clear()
-
-# Kamera: zeskanowano kod
-barcode_qp = qp.get("barcode")
-if barcode_qp and st.session_state.child_profile:
-    safe, nazwa, wykryte = sprawdz_sklad(barcode_qp, st.session_state.child_profile["allergens"])
-    st.session_state.scan_result = (safe, nazwa, wykryte)
-    st.session_state.show_camera = False
-    try:
-        del st.query_params["barcode"]
-    except KeyError:
-        pass
-    st.rerun()
 
 for pg in ["home", "form", "settings", "profile"]:
     if qp.get("nav") == pg:
@@ -807,19 +786,6 @@ if js_data and js_data != st.session_state.last_js_data:
             st.rerun()
         elif action == "v_edit":
             st.session_state.page = "settings"
-            st.rerun()
-        elif action == "barcode":
-            barcode = parts.get("code", "")
-            if barcode and st.session_state.child_profile:
-                safe, nazwa, wykryte = sprawdz_sklad(barcode, st.session_state.child_profile["allergens"])
-                st.session_state.scan_result = (safe, nazwa, wykryte)
-                st.session_state.show_camera = False
-                st.rerun()
-        elif action == "cam_off":
-            st.session_state.show_camera = False
-            st.rerun()
-        elif action == "cam_on":
-            st.session_state.show_camera = True
             st.rerun()
     except Exception as e:
         print(f"Action error: {e}")
@@ -1391,55 +1357,7 @@ st.components.v1.html("""<script>
 })();
 </script>""", height=0)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# 10b. PARENT MESSAGE LISTENER — odbiera postMessage z kamery
-# ══════════════════════════════════════════════════════════════════════════════
-st.markdown("""
-<script>
-(function() {
-    if (window._pb_poll) return;
-    window._pb_poll = true;
 
-    var lastTs = '';
-    setInterval(function() {
-        var ts = localStorage.getItem('purebaby_ts');
-        if (ts && ts !== lastTs) {
-            lastTs = ts;
-            var code = localStorage.getItem('purebaby_barcode');
-            if (code) {
-                localStorage.removeItem('purebaby_barcode');
-                localStorage.removeItem('purebaby_ts');
-                var i = document.querySelector('input[aria-label="js_data_exchange"]');
-                if (i) {
-                    i.focus();
-                    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                    setter.call(i, 'action=barcode&code=' + encodeURIComponent(code) + '&ts=' + Date.now());
-                    i.dispatchEvent(new Event('input', { bubbles: true }));
-                    i.dispatchEvent(new Event('change', { bubbles: true }));
-                    i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-                    i.blur();
-                }
-            }
-            var camOff = localStorage.getItem('purebaby_cam_off');
-            if (camOff === '1') {
-                localStorage.removeItem('purebaby_cam_off');
-                localStorage.removeItem('purebaby_ts');
-                var i = document.querySelector('input[aria-label="js_data_exchange"]');
-                if (i) {
-                    i.focus();
-                    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-                    setter.call(i, 'action=cam_off&ts=' + Date.now());
-                    i.dispatchEvent(new Event('input', { bubbles: true }));
-                    i.dispatchEvent(new Event('change', { bubbles: true }));
-                    i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-                    i.blur();
-                }
-            }
-        }
-    }, 500);
-})();
-</script>
-""", unsafe_allow_html=True)
 
 # Agresywne ukrywanie elementów Streamlit
 hide_html = ("""
