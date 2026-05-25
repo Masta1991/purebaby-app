@@ -71,13 +71,18 @@ def _process_icons():
     return b192, b512, base64.b64encode(b192).decode(), base64.b64encode(b512).decode()
 
 icon_bytes_192, icon_bytes_512, ICON_B64, ICON_B64_512 = _process_icons()
+icon_pil = Image.open(os.path.join(BASE_DIR, "zdjecia", "icon.png"))
 
 st.set_page_config(
     page_title="PureBaby",
-    page_icon=os.path.join(BASE_DIR, "zdjecia", "icon.png"),
+    page_icon=icon_pil,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+st.markdown("""
+    <link rel="apple-touch-icon" href="/app/static/apple-touch-icon.png">
+""", unsafe_allow_html=True)
 
 st.markdown(f"""
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -85,8 +90,6 @@ st.markdown(f"""
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="PureBaby">
     <meta name="theme-color" content="#006089">
-    <link rel="apple-touch-icon" href="/app/static/icon.png">
-    <link rel="apple-touch-icon-precomposed" href="/app/static/icon.png">
 """, unsafe_allow_html=True)
 
 PWA_MANIFEST = {
