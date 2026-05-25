@@ -409,17 +409,24 @@ def inject_custom_css():
 
     .ios-nav-center {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         justify-content: center;
+        gap: 8px;
         flex: 1;
         text-align: center;
         min-width: 0;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
     }
     .ios-top-logo {
-        height: 40px;
+        height: 28px;
         width: auto;
         object-fit: contain;
+        display: block;
+        mix-blend-mode: multiply;
+        background: transparent;
     }
     .ios-nav-title {
         font-size: 16px;
@@ -835,7 +842,9 @@ st.markdown(f"""
     <div class="ios-nav-center">
       <img src="data:image/png;base64,{LOGO_PURE_B64}" alt="Pure" class="ios-top-logo">
     </div>
-    <div class="ios-avatar" data-action="action=nav&page=scanner" style="cursor:pointer;">PB</div>
+    <div class="ios-avatar ios-scan-btn" data-action="action=nav&page=scanner" style="cursor:pointer;">
+      <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path><path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+    </div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -968,63 +977,50 @@ def sprawdz_sklad(kod_ean, alergie_dziecka):
 # ══════════════════════════════════════════════════════════════════════════════
 # 7C. PUREBABY PRODUCT CAROUSEL — horizontal recommendation panel
 # ══════════════════════════════════════════════════════════════════════════════
+PRODUCTS_DIR = os.path.join(BASE_DIR, "zdjecia", "Produkty")
+
+@st.cache_data
+def _load_product_images():
+    images = {}
+    if os.path.exists(PRODUCTS_DIR):
+        for f in sorted(os.listdir(PRODUCTS_DIR)):
+            if f.endswith(('.png', '.jpg', '.jpeg')):
+                path = os.path.join(PRODUCTS_DIR, f)
+                with open(path, 'rb') as img:
+                    images[f] = base64.b64encode(img.read()).decode()
+    return images
+
+PRODUCT_IMAGES = _load_product_images()
+
 PUREBABY_PRODUCTS = [
     {
         "name": "Chusteczki nawilżane 99,9% wody",
         "price": "5,99 zł",
         "old_price": "8,50 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_319_500_500/chusteczki-nawilzane-99%2C9-wody.jpg",
+        "image_file": "1.Chusteczki Nawilzane.png",
         "url": "https://purebaby.com.pl/chusteczki-nawilzane-wet-water-wipes",
         "badge": "-30%"
     },
     {
-        "name": "Chusteczki nawilżane z pantenolem",
+        "name": "Chusteczki Flush Water Wipes",
         "price": "6,50 zł",
         "old_price": "9,99 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_358_500_500/chusteczki-nawilzane-z-pantenolem.jpg",
+        "image_file": "2.Chusteczki Flush Water Wipes.png",
         "url": "https://purebaby.com.pl/chusteczki-nawilzane-do-splukiwania",
         "badge": "-35%"
     },
     {
-        "name": "Ręczniki jednorazowe bawełniane",
+        "name": "Ręczniki Cotton Wipes",
         "price": "18,99 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_308_500_500/bawelniane-reczniki-jednorazowe.jpg",
+        "image_file": "3.Cotton Wipes.png",
         "url": "https://purebaby.com.pl/reczniki-jednorazowe-bawelniane-cotton-wipes",
         "badge": "Bestseller"
     },
     {
-        "name": "Podkłady higieniczne chłonne",
-        "price": "49,99 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_349_500_500/podklady-higieniczne-do-przewijania.jpg",
-        "url": "https://purebaby.com.pl/podklady-higieniczne-chlonne-male",
-        "badge": ""
-    },
-    {
-        "name": "Ręczniki jednorazowe Eco Wipes",
+        "name": "Ręczniki Eco Wipes",
         "price": "13,99 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_356_500_500/reczniki-jednorazowe-Eco-Wipes.jpg",
+        "image_file": "4.Eco Wipes.png",
         "url": "https://purebaby.com.pl/reczniki-jednorazowe-biodegradowalne-eco-wipes",
-        "badge": "Nowość"
-    },
-    {
-        "name": "Nawilżany papier toaletowy",
-        "price": "8,60 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_292_500_500/nawilzany-papier-toaletowy.jpg",
-        "url": "https://purebaby.com.pl/papier-nawilzany-water-toilet-paper",
-        "badge": "Nowość"
-    },
-    {
-        "name": "Chusteczki nawilżane XXL",
-        "price": "13,99 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_326_500_500/chusteczki-nawilzane-XXL.jpg",
-        "url": "https://purebaby.com.pl/chusteczki-nawilzane-wet-water-wipes-XXL",
-        "badge": ""
-    },
-    {
-        "name": "Podkłady higieniczne duże",
-        "price": "34,99 zł",
-        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_343_500_500/podklady-higieniczne-chlonne.jpg",
-        "url": "https://purebaby.com.pl/podklady-higieniczne-duze",
         "badge": "Nowość"
     },
 ]
@@ -1041,11 +1037,13 @@ def render_product_carousel():
         if p.get("old_price"):
             old_price_html = '<div class="pb-old-price">' + p["old_price"] + '</div>'
         
+        img_src = 'data:image/png;base64,' + PRODUCT_IMAGES.get(p["image_file"], '')
+        
         products_html += (
             '<a href="' + p["url"] + '" target="_blank" rel="noopener noreferrer" class="pb-product-card">'
             + badge_html
             + '<div class="pb-image-wrapper">'
-            + '<img src="' + p["image"] + '" alt="' + p["name"] + '" loading="lazy">'
+            + '<img src="' + img_src + '" alt="' + p["name"] + '" loading="lazy">'
             + '</div>'
             + '<div class="pb-product-info">'
             + '<div class="pb-product-name">' + p["name"] + '</div>'
@@ -1431,36 +1429,42 @@ with col_main:
                 if (window._scanner) {{
                     try {{ window._scanner.stop(); }} catch(e) {{}}
                 }}
-                window._scanner = new Html5Qrcode("reader");
-                window._scanner.start(
-                    {{ facingMode: "environment" }},
-                    {{ fps: 10, qrbox: {{ width: 300, height: 120 }}, formatsToSupport: [
-                        Html5QrcodeSupportedFormats.EAN_8,
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.UPC_A,
-                        Html5QrcodeSupportedFormats.UPC_E,
-                        Html5QrcodeSupportedFormats.CODE_128,
-                        Html5QrcodeSupportedFormats.CODE_39,
-                        Html5QrcodeSupportedFormats.ITF,
-                        Html5QrcodeSupportedFormats.CODABAR
-                    ]}},
-                    function(decodedText) {{
-                        if (decodedText !== lastCode) {{
-                            lastCode = decodedText;
-                            scanMsg.textContent = 'Odczytano kod, analizuję...';
-                            window._scanner.stop();
-                            
-                            // Zapisz do localStorage dla parent listener
-                            localStorage.setItem('purebaby_barcode', decodedText);
-                            localStorage.setItem('purebaby_ts', Date.now().toString());
-                            
-                            checkProduct(decodedText);
-                        }}
-                    }},
-                    function() {{}}
-                ).catch(function(err) {{
-                    scanMsg.textContent = 'Nie można uruchomić kamery.';
-                }});
+                try {{
+                    window._scanner = new Html5Qrcode("reader");
+                    window._scanner.start(
+                        {{ facingMode: "environment" }},
+                        {{ fps: 10, qrbox: {{ width: 300, height: 120 }}, formatsToSupport: [
+                            Html5QrcodeSupportedFormats.EAN_8,
+                            Html5QrcodeSupportedFormats.EAN_13,
+                            Html5QrcodeSupportedFormats.UPC_A,
+                            Html5QrcodeSupportedFormats.UPC_E,
+                            Html5QrcodeSupportedFormats.CODE_128,
+                            Html5QrcodeSupportedFormats.CODE_39,
+                            Html5QrcodeSupportedFormats.ITF,
+                            Html5QrcodeSupportedFormats.CODABAR
+                        ]}},
+                        function(decodedText) {{
+                            if (decodedText !== lastCode) {{
+                                lastCode = decodedText;
+                                scanMsg.textContent = 'Odczytano kod, analizuję...';
+                                window._scanner.stop();
+                                
+                                // Zapisz do localStorage dla parent listener
+                                localStorage.setItem('purebaby_barcode', decodedText);
+                                localStorage.setItem('purebaby_ts', Date.now().toString());
+                                
+                                checkProduct(decodedText);
+                            }}
+                        }},
+                        function() {{}}
+                    ).catch(function(err) {{
+                        scanMsg.textContent = 'Kamera niedostępna. Użyj pola poniżej.';
+                        console.warn('Scanner error:', err);
+                    }});
+                }} catch(e) {{
+                    scanMsg.textContent = 'Kamera niedostępna. Użyj pola poniżej.';
+                    console.warn('Scanner init error:', e);
+                }}
             }}
 
             // Manual input
