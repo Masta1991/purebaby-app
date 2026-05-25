@@ -28,7 +28,7 @@ if not os.path.exists(ICON_DIR):
 icon_src = os.path.join(ICON_DIR, "szkielet.png")
 icon_512_path = os.path.join(ICON_DIR, "icon_512.png")
 icon_fav_path = os.path.join(BASE_DIR, "zdjecia", "icon.png")
-logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo_white_large.png")
+logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo_transparent_large.png")
 
 @st.cache_data
 def _process_icons():
@@ -417,13 +417,9 @@ def inject_custom_css():
         min-width: 0;
     }
     .ios-top-logo {
-        height: 42px;
+        height: 40px;
         width: auto;
-        background: #ffffff;
-        border-radius: 10px;
-        padding: 4px 8px;
         object-fit: contain;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     .ios-nav-title {
         font-size: 16px;
