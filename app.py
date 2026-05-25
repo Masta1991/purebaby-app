@@ -732,6 +732,8 @@ if "last_js_data" not in st.session_state:
     st.session_state.last_js_data = ""
 if "child_profile" not in st.session_state:
     st.session_state.child_profile = None
+if "old_profile" not in st.session_state:
+    st.session_state.old_profile = None
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. ACTION PROCESSOR
@@ -866,11 +868,15 @@ with col_main:
             </div>
             """, unsafe_allow_html=True)
 
+            if profile.get('photo'):
+                st.markdown(f'<div style="text-align:center;margin:16px 0;"><img src="data:image/png;base64,{profile["photo"]}" style="max-width:200px;border-radius:50%;border:3px solid #006089;"></div>', unsafe_allow_html=True)
+
             if profile['allergens']:
                 tags = "".join(f'<span style="background:rgba(0,96,137,0.1);color:#006089;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;display:inline-block;margin:4px 6px 4px 0;">{a}</span>' for a in profile['allergens'])
                 st.markdown(f'<div class="content-card"><div style="font-size:14px;font-weight:700;color:#1B2B3A;margin-bottom:10px;">Alergeny i nietolerancje</div><div>{tags}</div></div>', unsafe_allow_html=True)
 
             if st.button("EDYTUJ PROFIL", key="btn_edit_profile", type="primary"):
+                st.session_state.old_profile = dict(st.session_state.child_profile)
                 st.session_state.child_profile = None
                 st.rerun()
 
@@ -884,6 +890,8 @@ with col_main:
 
             name = st.text_input("Imię dziecka", key="inp_name", placeholder="np. Zosia")
             age = st.text_input("Wiek", key="inp_age", placeholder="np. 3 lata")
+
+            photo = st.file_uploader("Zdjęcie dziecka", type=["jpg","jpeg","png"], key="inp_photo")
 
             selected = st.multiselect(
                 "Alergeny i nietolerancje",
@@ -899,11 +907,17 @@ with col_main:
                     all_allergens = selected[:]
                     if custom.strip():
                         all_allergens.append(custom.strip())
-                    st.session_state.child_profile = {
+                    profile_data = {
                         "name": name.strip(),
                         "age": age.strip(),
                         "allergens": all_allergens,
                     }
+                    if photo is not None:
+                        profile_data["photo"] = base64.b64encode(photo.read()).decode()
+                    elif st.session_state.get("old_profile", {}).get("photo"):
+                        profile_data["photo"] = st.session_state.old_profile["photo"]
+                    st.session_state.child_profile = profile_data
+                    st.session_state.old_profile = None
                     st.success(f"Profil {name.strip()} został pomyślnie zapisany i aktywowany w skanerze")
                     st.rerun()
 
