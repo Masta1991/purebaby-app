@@ -1139,7 +1139,7 @@ def render_product_carousel():
         flex: 0 0 200px;
         min-width: 200px;
         max-width: 200px;
-        min-height: 400px;
+        min-height: 380px;
         height: auto;
         background: #ffffff;
         border-radius: 18px;
@@ -1152,6 +1152,7 @@ def render_product_carousel():
         scroll-snap-align: start;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
         border: 1px solid rgba(0, 0, 0, 0.04);
     }
     .pb-product-card:hover {
@@ -1202,7 +1203,7 @@ def render_product_carousel():
         transform: scale(1.05);
     }
     .pb-product-info {
-        padding: 15px;
+        padding: 15px 15px 20px 15px;
         display: flex;
         flex-direction: column;
         flex-grow: 1;
@@ -1242,6 +1243,7 @@ def render_product_carousel():
     .pb-buy-btn {
         display: block;
         width: 100%;
+        margin-top: 15px;
         padding: 10px 0;
         background: linear-gradient(135deg, #006089 0%, #0078a8 100%);
         color: #ffffff;
@@ -1252,13 +1254,14 @@ def render_product_carousel():
         transition: all 0.2s ease;
         letter-spacing: 0.2px;
         box-shadow: 0 2px 8px rgba(0, 96, 137, 0.2);
+        box-sizing: border-box;
     }
     .pb-product-card:hover .pb-buy-btn {
         background: linear-gradient(135deg, #004d6e 0%, #006089 100%);
         box-shadow: 0 4px 12px rgba(0, 96, 137, 0.3);
     }
     </style>
-    """, height=460)
+    """, height=500)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
