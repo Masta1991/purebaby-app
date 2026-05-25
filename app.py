@@ -974,35 +974,32 @@ with col_main:
             # ── Skaner ──
             if not st.session_state.show_camera:
                 st.markdown("""
-                <div class="content-card" style="text-align:center;padding:32px 24px;">
-                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#006089" stroke-width="1.5" fill="none" style="margin-bottom:12px;">
-                        <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
-                        <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
-                        <line x1="7" y1="12" x2="17" y2="12"></line>
-                    </svg>
-                    <h3 style="margin:0 0 4px 0;color:#006089;">Skaner produktów</h3>
-                    <p style="color:#6B7B8D;margin:0 0 20px 0;">Zeskanuj kod kreskowy produktu, aby sprawdzić alergeny</p>
-                    <div class="scanner-btn" data-action="action=cam_on" style="display:inline-block;background:#006089;color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform 0.15s ease;">
+                <div class="content-card" style="text-align:center;padding:28px 24px;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
+                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="#006089" stroke-width="2" fill="none">
+                            <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
+                            <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
+                            <line x1="7" y1="12" x2="17" y2="12"></line>
+                        </svg>
+                        <h3 style="margin:0;color:#006089;font-size:18px;">Skaner Produktów</h3>
+                    </div>
+                    <p style="color:#6B7B8D;margin:0 0 20px 0;font-size:14px;">Zeskanuj kod kreskowy</p>
+                    <div class="scanner-btn" data-action="action=cam_on" style="display:inline-block;background:#006089;color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">
                         URUCHOM KAMERĘ
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-                col_b1, col_b2 = st.columns([3, 1])
-                with col_b1:
-                    barcode_manual = st.text_input("Lub wpisz kod ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
-                with col_b2:
-                    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                    if st.button("SKANUJ", key="btn_scan_manual", type="primary", use_container_width=True):
-                        if barcode_manual.strip():
-                            name, ingredients = fetch_product(barcode_manual.strip())
-                            if name is None:
-                                st.session_state.scan_result = ("not_found", None, barcode_manual.strip(), "")
-                            else:
-                                result, found, pname = check_allergens(name, ingredients, profile["allergens"])
-                                st.session_state.scan_result = (result, found, pname, ingredients)
-                            st.rerun()
+                barcode_manual = st.text_input("Wpisz kod ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
+                if barcode_manual.strip():
+                    if st.button("SKANUJ", key="btn_scan_manual", type="primary"):
+                        name, ingredients = fetch_product(barcode_manual.strip())
+                        if name is None:
+                            st.session_state.scan_result = ("not_found", None, barcode_manual.strip(), "")
+                        else:
+                            result, found, pname = check_allergens(name, ingredients, profile["allergens"])
+                            st.session_state.scan_result = (result, found, pname, ingredients)
+                        st.rerun()
             else:
                 st.components.v1.html("""
                 <div id="reader" style="width:100%;max-width:400px;margin:16px auto;"></div>
@@ -1055,8 +1052,8 @@ with col_main:
                     st.session_state.show_camera = False
                     st.rerun()
 
-            # Wyświetl wynik skanowania
-            if st.session_state.get("scan_result"):
+            # ── Wynik skanowania ──
+            if st.session_state.get("scan_result") and not st.session_state.show_camera:
                 result, found, pname, ingredients = st.session_state.scan_result
                 if result == "safe":
                     st.markdown(f"""
