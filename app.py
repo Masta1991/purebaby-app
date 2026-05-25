@@ -1286,18 +1286,6 @@ st.components.v1.html("""<script>
         pdoc.body.setAttribute('data-bridge-v4', 'true');
     }
 
-    if (!pwin._hasMsgListener) {
-        pwin._hasMsgListener = true;
-        pwin.addEventListener('message', function(e) {
-            if (e.data && e.data.type === 'barcode' && e.data.code) {
-                pwin.sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(e.data.code));
-            }
-            if (e.data && e.data.type === 'cam_off') {
-                pwin.sendActionToStreamlit('action=cam_off');
-            }
-        });
-    }
-
     if (pdoc.readyState === 'complete' || pdoc.readyState === 'interactive') {
         attachListeners();
     } else {
@@ -1307,6 +1295,32 @@ st.components.v1.html("""<script>
     setTimeout(attachListeners, 2000);
 })();
 </script>""", height=0)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 10b. PARENT MESSAGE LISTENER — odbiera postMessage z kamery
+# ══════════════════════════════════════════════════════════════════════════════
+st.markdown("""
+<script>
+(function() {
+    if (window._pb_msg_listener) return;
+    window._pb_msg_listener = true;
+    window.addEventListener('message', function(e) {
+        var d = e.data;
+        if (!d) return;
+        if (d.type === 'barcode' && d.code) {
+            if (typeof sendActionToStreamlit === 'function') {
+                sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(d.code));
+            }
+        }
+        if (d.type === 'cam_off') {
+            if (typeof sendActionToStreamlit === 'function') {
+                sendActionToStreamlit('action=cam_off');
+            }
+        }
+    });
+})();
+</script>
+""", unsafe_allow_html=True)
 
 # Agresywne ukrywanie elementów Streamlit
 hide_html = ("""
