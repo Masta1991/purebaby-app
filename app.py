@@ -1044,21 +1044,6 @@ with col_main:
                 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
                 <script>
                 (function() {
-                    var pdoc = window.parent.document;
-                    var pwin = window.parent;
-
-                    function sendAction(s) {
-                        var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
-                        if (i) {
-                            i.focus();
-                            var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
-                            setter.call(i, s + '&ts=' + Date.now());
-                            i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
-                            i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
-                            i.blur();
-                        }
-                    }
-
                     function startScanner() {
                         var lastCode = '';
                         var msgs = document.getElementById('scan-msg');
@@ -1078,17 +1063,17 @@ with col_main:
                             function(decodedText) {
                                 if (decodedText !== lastCode) {
                                     lastCode = decodedText;
-                                    if (msgs) msgs.textContent = 'Odczytano kod, sprawdzam...';
-                                    sendAction('action=barcode&code=' + encodeURIComponent(decodedText));
+                                    if (msgs) msgs.textContent = 'Odczytano kod, analizuję...';
+                                    scanner.stop();
+                                    window.parent.postMessage({type: 'barcode', code: decodedText}, '*');
                                 }
                             },
                             function() {}
                         ).catch(function(err) {
-                            if (msgs) msgs.textContent = 'Nie mozna uruchomic kamery.';
-                            sendAction('action=cam_off');
+                            if (msgs) msgs.textContent = 'Nie można uruchomić kamery.';
+                            window.parent.postMessage({type: 'cam_off'}, '*');
                         });
                     }
-
                     if (typeof Html5Qrcode === 'undefined') {
                         setTimeout(startScanner, 500);
                     } else {
@@ -1287,6 +1272,18 @@ st.components.v1.html("""<script>
         pdoc.body.removeEventListener('click', pwin.trainerClickHandler);
         pdoc.body.addEventListener('click', pwin.trainerClickHandler);
         pdoc.body.setAttribute('data-bridge-v4', 'true');
+    }
+
+    if (!pwin._hasMsgListener) {
+        pwin._hasMsgListener = true;
+        pwin.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'barcode' && e.data.code) {
+                pwin.sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(e.data.code));
+            }
+            if (e.data && e.data.type === 'cam_off') {
+                pwin.sendActionToStreamlit('action=cam_off');
+            }
+        });
     }
 
     if (pdoc.readyState === 'complete' || pdoc.readyState === 'interactive') {
