@@ -619,46 +619,60 @@ def inject_custom_css():
         border-radius: 12px !important;
     }
 
-    .stTextInput,
-    .stTextInput > div,
-    .stTextInput label,
-    div[data-testid="stTextInput"],
-    div[data-testid="stTextInput"] > label {
+    /* Clean input fields — no double-border effect */
+    div[data-testid="stTextInput"] {
         background: transparent !important;
-        color: #1B2B3A !important;
-        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
     }
-
-    .stTextInput input,
-    .stTextInput div[data-baseweb="input"] input,
-    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextInput"] label {
+        color: #1B2B3A !important;
+        font-family: 'Nunito', sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        margin-bottom: 4px !important;
+    }
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
-        background-color: #ffffff !important;
+        background: #ffffff !important;
         border: 1px solid #d0d5dd !important;
         border-radius: 12px !important;
-        padding: 12px 16px !important;
-        color: #1B2B3A !important;
-        font-size: 15px !important;
-        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        caret-color: #006089 !important;
+        padding: 0 !important;
+        margin: 0 !important;
         box-shadow: none !important;
         outline: none !important;
     }
-    .stTextInput div[data-baseweb="input"] input:focus,
-    div[data-testid="stTextInput"] input:focus {
+    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
         border-color: #006089 !important;
         box-shadow: 0 0 0 2px rgba(0,96,137,0.15) !important;
     }
+    div[data-testid="stTextInput"] input {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+        padding: 14px 16px !important;
+        color: #1B2B3A !important;
+        font-size: 16px !important;
+        font-family: 'Nunito', sans-serif !important;
+        caret-color: #006089 !important;
+        min-height: auto !important;
+        line-height: 1.4 !important;
+    }
 
-    .stMultiSelect div[data-baseweb="select"] > div,
+    /* Clean multiselect */
+    div[data-testid="stMultiSelect"] label {
+        color: #1B2B3A !important;
+        font-family: 'Nunito', sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        margin-bottom: 4px !important;
+    }
     div[data-testid="stMultiSelect"] div[data-baseweb="select"] {
-        background-color: #ffffff !important;
+        background: #ffffff !important;
         border: 1px solid #d0d5dd !important;
         border-radius: 12px !important;
-        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        font-family: 'Nunito', sans-serif !important;
         color: #1B2B3A !important;
     }
-    .stMultiSelect div[data-baseweb="select"] > div:hover {
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"]:hover {
         border-color: #006089 !important;
     }
 </style>
