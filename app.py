@@ -657,7 +657,10 @@ def inject_custom_css():
         line-height: 1.4 !important;
     }
 
-    /* Clean multiselect */
+    /* Clean multiselect — wszystkie kolory wymuszone */
+    div[data-testid="stMultiSelect"] * {
+        color: #1B2B3A !important;
+    }
     div[data-testid="stMultiSelect"] > label,
     div[data-testid="stMultiSelect"] label {
         color: #1B2B3A !important;
@@ -666,23 +669,26 @@ def inject_custom_css():
         font-weight: 600 !important;
         margin-bottom: 4px !important;
     }
-    .stMultiSelect label,
-    div[data-testid="stMultiSelect"] p {
-        color: #1B2B3A !important;
-    }
     div[data-testid="stMultiSelect"] div[data-baseweb="select"] {
         background: #ffffff !important;
         border: 1px solid #d0d5dd !important;
         border-radius: 12px !important;
         font-family: 'Nunito', sans-serif !important;
-        color: #1B2B3A !important;
     }
     div[data-testid="stMultiSelect"] div[data-baseweb="select"]:hover {
         border-color: #006089 !important;
     }
-    div[data-testid="stMultiSelect"] span,
-    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] span {
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"] input {
         color: #1B2B3A !important;
+        background: transparent !important;
+    }
+    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] {
+        background: rgba(0,96,137,0.08) !important;
+        color: #006089 !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] span {
+        color: #006089 !important;
     }
 </style>
 """, unsafe_allow_html=True)
