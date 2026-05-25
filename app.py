@@ -28,6 +28,7 @@ if not os.path.exists(ICON_DIR):
 icon_src = os.path.join(ICON_DIR, "szkielet.png")
 icon_512_path = os.path.join(ICON_DIR, "icon_512.png")
 icon_fav_path = os.path.join(BASE_DIR, "zdjecia", "icon.png")
+logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo aplikacji.png")
 
 @st.cache_data
 def _process_icons():
@@ -70,6 +71,18 @@ def _process_icons():
     return b192, b512, base64.b64encode(b192).decode(), base64.b64encode(b512).decode()
 
 icon_bytes_192, icon_bytes_512, ICON_B64, ICON_B64_512 = _process_icons()
+
+@st.cache_data
+def _load_pure_logo():
+    try:
+        if os.path.exists(logo_pure_path):
+            with open(logo_pure_path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
+    except Exception:
+        pass
+    return ICON_B64
+
+LOGO_PURE_B64 = _load_pure_logo()
 
 st.set_page_config(
     page_title="PureBaby",
@@ -823,7 +836,7 @@ st.markdown(f"""
       <span class="hbr"></span><span class="hbr"></span><span class="hbr"></span>
     </div>
     <div class="ios-nav-center">
-      <img src="data:image/png;base64,{ICON_B64}" alt="PureBaby" class="ios-top-logo">
+      <img src="data:image/png;base64,{LOGO_PURE_B64}" alt="Pure" class="ios-top-logo">
     </div>
     <div class="ios-avatar" data-action="action=nav&page=scanner" style="cursor:pointer;">PB</div>
   </div>
@@ -1024,62 +1037,62 @@ def render_product_carousel():
         badge_html = ""
         if p["badge"]:
             badge_color = "#dc2626" if p["badge"].startswith("-") else "#006089"
-            badge_html = f'<div class="pb-badge" style="background:{badge_color};">{p["badge"]}</div>'
+            badge_html = '<div class="pb-badge" style="background:' + badge_color + ';">' + p["badge"] + '</div>'
         
         old_price_html = ""
         if p.get("old_price"):
-            old_price_html = f'<div class="pb-old-price">{p["old_price"]}</div>'
+            old_price_html = '<div class="pb-old-price">' + p["old_price"] + '</div>'
         
-        products_html += f'''
-        <a href="{p["url"]}" target="_blank" rel="noopener noreferrer" class="pb-product-card">
-            {badge_html}
-            <div class="pb-image-wrapper">
-                <img src="{p["image"]}" alt="{p["name"]}" loading="lazy" onerror="this.src='https://purebaby.com.pl/environment/cache/images/storefrontImages_130fe15d-3ac8-420d-a452-55ec72463626_297_0.png'">
-            </div>
-            <div class="pb-product-info">
-                <div class="pb-product-name">{p["name"]}</div>
-                {old_price_html}
-                <div class="pb-price">{p["price"]}</div>
-                <div class="pb-buy-btn">Kup teraz</div>
-            </div>
-        </a>
-        '''
+        products_html += (
+            '<a href="' + p["url"] + '" target="_blank" rel="noopener noreferrer" class="pb-product-card">'
+            + badge_html
+            + '<div class="pb-image-wrapper">'
+            + '<img src="' + p["image"] + '" alt="' + p["name"] + '" loading="lazy">'
+            + '</div>'
+            + '<div class="pb-product-info">'
+            + '<div class="pb-product-name">' + p["name"] + '</div>'
+            + old_price_html
+            + '<div class="pb-price">' + p["price"] + '</div>'
+            + '<div class="pb-buy-btn">Kup teraz</div>'
+            + '</div>'
+            + '</a>'
+        )
     
-    st.markdown(f"""
+    st.components.v1.html("""
     <div class="pb-carousel-container">
         <div class="pb-carousel-header">
             <span class="pb-carousel-title">Polecane produkty PureBaby</span>
             <span class="pb-carousel-subtitle">Bezpieczne dla dziecka od 1. dnia życia</span>
         </div>
         <div class="pb-carousel-track">
-            {products_html}
+            """ + products_html + """
         </div>
     </div>
     
     <style>
-    .pb-carousel-container {{
+    .pb-carousel-container {
         background: #ffffff;
         border-radius: 20px;
         padding: 20px;
         margin: 16px 0;
         border: 1px solid rgba(0, 0, 0, 0.04);
-    }}
-    .pb-carousel-header {{
+    }
+    .pb-carousel-header {
         margin-bottom: 16px;
         padding-left: 4px;
-    }}
-    .pb-carousel-title {{
+    }
+    .pb-carousel-title {
         font-size: 18px;
         font-weight: 800;
         color: #006089;
         display: block;
-    }}
-    .pb-carousel-subtitle {{
+    }
+    .pb-carousel-subtitle {
         font-size: 12px;
         color: #6B7B8D;
         font-weight: 500;
-    }}
-    .pb-carousel-track {{
+    }
+    .pb-carousel-track {
         display: flex;
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -1087,22 +1100,22 @@ def render_product_carousel():
         gap: 14px;
         padding-bottom: 8px;
         scroll-snap-type: x mandatory;
-    }}
-    .pb-carousel-track::-webkit-scrollbar {{
+    }
+    .pb-carousel-track::-webkit-scrollbar {
         height: 6px;
-    }}
-    .pb-carousel-track::-webkit-scrollbar-track {{
+    }
+    .pb-carousel-track::-webkit-scrollbar-track {
         background: #f1f5f9;
         border-radius: 3px;
-    }}
-    .pb-carousel-track::-webkit-scrollbar-thumb {{
+    }
+    .pb-carousel-track::-webkit-scrollbar-thumb {
         background: #cbd5e1;
         border-radius: 3px;
-    }}
-    .pb-carousel-track::-webkit-scrollbar-thumb:hover {{
+    }
+    .pb-carousel-track::-webkit-scrollbar-thumb:hover {
         background: #94a3b8;
-    }}
-    .pb-product-card {{
+    }
+    .pb-product-card {
         flex: 0 0 180px;
         min-width: 180px;
         max-width: 180px;
@@ -1116,12 +1129,12 @@ def render_product_carousel():
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         scroll-snap-align: start;
         display: block;
-    }}
-    .pb-product-card:hover {{
+    }
+    .pb-product-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 4px 16px rgba(0, 96, 137, 0.15);
-    }}
-    .pb-badge {{
+    }
+    .pb-badge {
         position: absolute;
         top: 8px;
         left: 8px;
@@ -1131,8 +1144,8 @@ def render_product_carousel():
         font-weight: 700;
         color: #ffffff;
         z-index: 2;
-    }}
-    .pb-image-wrapper {{
+    }
+    .pb-image-wrapper {
         width: 100%;
         height: 140px;
         display: flex;
@@ -1140,16 +1153,16 @@ def render_product_carousel():
         justify-content: center;
         background: #f8fafc;
         padding: 12px;
-    }}
-    .pb-image-wrapper img {{
+    }
+    .pb-image-wrapper img {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
-    }}
-    .pb-product-info {{
+    }
+    .pb-product-info {
         padding: 12px;
-    }}
-    .pb-product-name {{
+    }
+    .pb-product-name {
         font-size: 12px;
         font-weight: 600;
         color: #1B2B3A;
@@ -1160,20 +1173,20 @@ def render_product_carousel():
         -webkit-box-orient: vertical;
         overflow: hidden;
         height: 32px;
-    }}
-    .pb-old-price {{
+    }
+    .pb-old-price {
         font-size: 11px;
         color: #94a3b8;
         text-decoration: line-through;
         margin-bottom: 2px;
-    }}
-    .pb-price {{
+    }
+    .pb-price {
         font-size: 16px;
         font-weight: 800;
         color: #006089;
         margin-bottom: 8px;
-    }}
-    .pb-buy-btn {{
+    }
+    .pb-buy-btn {
         display: block;
         width: 100%;
         padding: 8px 0;
@@ -1184,12 +1197,12 @@ def render_product_carousel():
         font-size: 12px;
         font-weight: 700;
         transition: background 0.2s ease;
-    }}
-    .pb-product-card:hover .pb-buy-btn {{
+    }
+    .pb-product-card:hover .pb-buy-btn {
         background: #004d6e;
-    }}
+    }
     </style>
-    """, unsafe_allow_html=True)
+    """, height=300)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
