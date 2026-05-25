@@ -975,31 +975,48 @@ with col_main:
             if not st.session_state.show_camera:
                 st.markdown("""
                 <div class="content-card" style="text-align:center;padding:28px 24px;">
-                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;">
                         <svg viewBox="0 0 24 24" width="24" height="24" stroke="#006089" stroke-width="2" fill="none">
                             <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
                             <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
                             <line x1="7" y1="12" x2="17" y2="12"></line>
                         </svg>
-                        <h3 style="margin:0;color:#006089;font-size:18px;">Skaner Produktów</h3>
+                        <span style="font-size:16px;font-weight:700;color:#1B2B3A;">Zeskanuj kod kreskowy</span>
                     </div>
-                    <p style="color:#6B7B8D;margin:0 0 20px 0;font-size:14px;">Zeskanuj kod kreskowy</p>
-                    <div class="scanner-btn" data-action="action=cam_on" style="display:inline-block;background:#006089;color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">
+                    <div class="scanner-btn" data-action="action=cam_on" style="display:inline-block;background:#006089;color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;margin-bottom:24px;">
                         URUCHOM KAMERĘ
                     </div>
+                    <div style="text-align:left;">
+                        <div style="font-size:14px;font-weight:600;color:#1B2B3A;margin-bottom:6px;">Wpisz kod ręcznie</div>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="manual-barcode" placeholder="np. 5901234567890" 
+                                style="flex:1;padding:12px 16px;border:1px solid #d0d5dd;border-radius:12px;font-size:15px;font-family:'Nunito',sans-serif;color:#1B2B3A;outline:none;background:#fff;">
+                            <span id="scan-manual-btn" data-action="" style="display:none;align-items:center;padding:12px 20px;background:#006089;color:#fff;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap;">SKANUJ</span>
+                        </div>
+                    </div>
                 </div>
+                <script>
+                (function() {
+                    var inp = document.getElementById('manual-barcode');
+                    var btn = document.getElementById('scan-manual-btn');
+                    if (inp && btn) {
+                        inp.addEventListener('input', function() {
+                            btn.style.display = inp.value.trim() ? 'flex' : 'none';
+                        });
+                        inp.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter' && inp.value.trim()) {
+                                window.parent.location.search = '?barcode=' + encodeURIComponent(inp.value.trim());
+                            }
+                        });
+                        btn.addEventListener('click', function() {
+                            if (inp.value.trim()) {
+                                window.parent.location.search = '?barcode=' + encodeURIComponent(inp.value.trim());
+                            }
+                        });
+                    }
+                })();
+                </script>
                 """, unsafe_allow_html=True)
-
-                barcode_manual = st.text_input("Wpisz kod ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
-                if barcode_manual.strip():
-                    if st.button("SKANUJ", key="btn_scan_manual", type="primary"):
-                        name, ingredients = fetch_product(barcode_manual.strip())
-                        if name is None:
-                            st.session_state.scan_result = ("not_found", None, barcode_manual.strip(), "")
-                        else:
-                            result, found, pname = check_allergens(name, ingredients, profile["allergens"])
-                            st.session_state.scan_result = (result, found, pname, ingredients)
-                        st.rerun()
             else:
                 st.components.v1.html("""
                 <div id="reader" style="width:100%;max-width:400px;margin:16px auto;"></div>
