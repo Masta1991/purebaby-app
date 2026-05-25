@@ -774,7 +774,10 @@ if barcode_qp and st.session_state.child_profile:
     safe, nazwa, wykryte = sprawdz_sklad(barcode_qp, st.session_state.child_profile["allergens"])
     st.session_state.scan_result = (safe, nazwa, wykryte)
     st.session_state.show_camera = False
-    st.query_params.clear()
+    try:
+        del st.query_params["barcode"]
+    except KeyError:
+        pass
     st.rerun()
 
 for pg in ["home", "form", "settings", "profile"]:
@@ -1079,7 +1082,9 @@ with col_main:
                                     lastCode = decodedText;
                                     if (msgs) msgs.textContent = 'Odczytano kod, analizuję...';
                                     scanner.stop();
-                                    window.parent.postMessage({type: 'barcode', code: decodedText}, '*');
+                                    var url = new URL(window.top.location.href);
+                                    url.searchParams.set('barcode', decodedText);
+                                    window.top.location.href = url.toString();
                                 }
                             },
                             function() {}
