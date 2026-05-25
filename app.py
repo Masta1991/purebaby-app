@@ -658,12 +658,17 @@ def inject_custom_css():
     }
 
     /* Clean multiselect */
+    div[data-testid="stMultiSelect"] > label,
     div[data-testid="stMultiSelect"] label {
         color: #1B2B3A !important;
         font-family: 'Nunito', sans-serif !important;
         font-size: 14px !important;
         font-weight: 600 !important;
         margin-bottom: 4px !important;
+    }
+    .stMultiSelect label,
+    div[data-testid="stMultiSelect"] p {
+        color: #1B2B3A !important;
     }
     div[data-testid="stMultiSelect"] div[data-baseweb="select"] {
         background: #ffffff !important;
@@ -674,6 +679,10 @@ def inject_custom_css():
     }
     div[data-testid="stMultiSelect"] div[data-baseweb="select"]:hover {
         border-color: #006089 !important;
+    }
+    div[data-testid="stMultiSelect"] span,
+    div[data-testid="stMultiSelect"] div[data-baseweb="tag"] span {
+        color: #1B2B3A !important;
     }
 </style>
 """, unsafe_allow_html=True)
