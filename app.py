@@ -16,6 +16,7 @@ os.makedirs(os.path.join(BASE_DIR, "zdjecia"), exist_ok=True)
 SVG_HOME = """<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>"""
 SVG_SETTINGS = """<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>"""
 SVG_ADD_DATA = """<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>"""
+SVG_BABY = """<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"></path><path d="M12 8c-3 0-5.5 1.5-7 4l2 1c1.5-2 3-3 5-3s3.5 1 5 3l2-1c-1.5-2.5-4-4-7-4z"></path><path d="M12 12c-4 0-7 2-7 5v2h14v-2c0-3-3-5-7-5z"></path></svg>"""
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 2. PWA SETUP & FAVICON (cached — runs only once per session)
@@ -71,7 +72,7 @@ def _process_icons():
 icon_bytes_192, icon_bytes_512, ICON_B64, ICON_B64_512 = _process_icons()
 
 st.set_page_config(
-    page_title="Szkielet MS",
+    page_title="PureBaby",
     page_icon=os.path.join(BASE_DIR, "zdjecia", "icon.png"),
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -81,15 +82,15 @@ st.markdown(f"""
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Szkielet MS">
+    <meta name="apple-mobile-web-app-title" content="PureBaby">
     <meta name="theme-color" content="#006089">
     <link rel="apple-touch-icon" href="data:image/png;base64,{ICON_B64}">
     <link rel="apple-touch-icon-precomposed" href="data:image/png;base64,{ICON_B64}">
 """, unsafe_allow_html=True)
 
 PWA_MANIFEST = {
-    "name": "Szkielet MS",
-    "short_name": "Szkielet",
+    "name": "PureBaby",
+    "short_name": "PureBaby",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#F2F7FA",
@@ -116,7 +117,7 @@ st.components.v1.html(f"""
         ['apple-mobile-web-app-capable', 'yes'],
         ['apple-mobile-web-app-status-bar-style', 'default'],
         ['mobile-web-app-capable', 'yes'],
-        ['apple-mobile-web-app-title', 'Szkielet MS'],
+        ['apple-mobile-web-app-title', 'PureBaby'],
         ['theme-color', '#006089']
     ];
     metas.forEach(function(m) {{
@@ -625,12 +626,18 @@ inject_custom_css()
 # ══════════════════════════════════════════════════════════════════════════════
 # 4. SESSION STATE & DATA
 # ══════════════════════════════════════════════════════════════════════════════
-SAMPLE_ITEMS = ["Element A", "Element B", "Element C", "Element D"]
-SAMPLE_CATEGORIES = {
-    "Kategoria 1": ["Podkategoria A1", "Podkategoria A2", "Podkategoria A3"],
-    "Kategoria 2": ["Podkategoria B1", "Podkategoria B2"],
-    "Kategoria 3": ["Podkategoria C1", "Podkategoria C2", "Podkategoria C3"],
-}
+PREDEFINED_ALLERGENS = [
+    "Mleko krowie (laktoza, kazeina)",
+    "Orzechy (ziemne, drzewne)",
+    "Gluten/Pszenica",
+    "Jaja",
+    "Soja",
+    "Skorupiaki",
+    "Ryby",
+    "Sezam",
+    "Konserwanty",
+    "Sztuczne barwniki",
+]
 
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -638,16 +645,14 @@ if "mobile_menu" not in st.session_state:
     st.session_state.mobile_menu = False
 if "last_js_data" not in st.session_state:
     st.session_state.last_js_data = ""
-if "selected_item" not in st.session_state:
-    st.session_state.selected_item = SAMPLE_ITEMS[0]
-if "selected_category" not in st.session_state:
-    st.session_state.selected_category = list(SAMPLE_CATEGORIES.keys())[0]
+if "child_profile" not in st.session_state:
+    st.session_state.child_profile = None
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. ACTION PROCESSOR
 # ══════════════════════════════════════════════════════════════════════════════
 qp = st.query_params
-for pg in ["home", "form", "settings"]:
+for pg in ["home", "form", "settings", "profile"]:
     if qp.get("nav") == pg:
         st.session_state.page = pg
         st.session_state.mobile_menu = False
@@ -691,10 +696,10 @@ st.markdown(f"""
       <span class="hbr"></span><span class="hbr"></span><span class="hbr"></span>
     </div>
     <div class="ios-nav-center">
-      <div class="ios-nav-title">Szkielet MS</div>
-      <div class="ios-nav-subtitle">{today_label} · v28</div>
+      <div class="ios-nav-title">PureBaby</div>
+      <div class="ios-nav-subtitle">{today_label} · v1</div>
     </div>
-    <div class="ios-avatar">MS</div>
+    <div class="ios-avatar">PB</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -703,6 +708,7 @@ st.markdown(f"""
 menu_class = "mobile-menu-dropdown show" if st.session_state.mobile_menu else "mobile-menu-dropdown"
 menu_items = [
     ("home", "Strona Główna", SVG_HOME),
+    ("profile", "Profil Dziecka", SVG_BABY),
     ("form", "Formularz", SVG_ADD_DATA),
     ("settings", "Ustawienia", SVG_SETTINGS),
 ]
@@ -724,13 +730,14 @@ with col_side:
     <div class="control-panel-card">
         <div>
             <div class="tile-label">PANEL DOWODZENIA</div>
-            <div style="font-size: 22px; font-weight: 800; color: #1B2B3A; margin-top: 10px;">Witaj, MS!</div>
-            <div style="font-size: 13px; color: #6B7B8D; margin-top: 5px;">{today_label} · v28</div>
+            <div style="font-size: 22px; font-weight: 800; color: #1B2B3A; margin-top: 10px;">PureBaby</div>
+            <div style="font-size: 13px; color: #6B7B8D; margin-top: 5px;">{today_label} · v1</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 
     tiles = [("START","Strona Główna","Widok startowy",SVG_HOME,"home"),
+             ("DZIECKO","Profil Dziecka","Dane i alergeny dziecka",SVG_BABY,"profile"),
              ("DANE","Formularz","Przykładowy formularz",SVG_ADD_DATA,"form"),
              ("KONFIGURACJA","Ustawienia","Konfiguracja szkieletu",SVG_SETTINGS,"settings")]
     tiles_html = '<div class="desktop-only">'
@@ -744,65 +751,104 @@ with col_side:
 # ══════════════════════════════════════════════════════════════════════════════
 with col_main:
     if st.session_state.page == "home":
-        st.markdown("""
-        <div class="content-card">
-            <h3>Witaj w szkielecie aplikacji!</h3>
-            <p style="color: #6B7B8D; margin-top: 8px;">
-                Ten szkielet stanowi bazę do budowy nowych aplikacji Streamlit 
-                z gotowym responsywnym interfejsem (mobile + desktop).
-            </p>
-            <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
-                <div style="background: #F2F7FA; border-radius: 14px; padding: 16px; flex: 1; min-width: 140px;">
-                    <div style="font-size: 24px; font-weight: 800; color: #006089;">3</div>
-                    <div style="font-size: 12px; color: #6B7B8D; margin-top: 4px;">Podstrony</div>
-                </div>
-                <div style="background: #F2F7FA; border-radius: 14px; padding: 16px; flex: 1; min-width: 140px;">
-                    <div style="font-size: 24px; font-weight: 800; color: #006089;">iOS</div>
-                    <div style="font-size: 12px; color: #6B7B8D; margin-top: 4px;">Top & Bottom Bar</div>
-                </div>
-                <div style="background: #F2F7FA; border-radius: 14px; padding: 16px; flex: 1; min-width: 140px;">
-                    <div style="font-size: 24px; font-weight: 800; color: #006089;">PWA</div>
-                    <div style="font-size: 12px; color: #6B7B8D; margin-top: 4px;">Gotowe do instalacji</div>
-                </div>
+        profile = st.session_state.child_profile
+        if profile:
+            st.markdown(f"""
+            <div class="content-card">
+                <h3>Witaj, {profile['name']}! 🎉</h3>
+                <p style="color: #6B7B8D; margin-top: 8px;">Profil dziecka jest aktywny. Możesz skanować produkty i sprawdzać alergeny.</p>
             </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="content-card">
+                <h3>Witaj w PureBaby! 👶</h3>
+                <p style="color: #6B7B8D; margin-top: 8px;">
+                    Aplikacja do bezpiecznego skanowania produktów spożywczych dla Twojego dziecka.
+                    Zacznij od utworzenia profilu dziecka.
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    elif st.session_state.page == "profile":
+        profile = st.session_state.child_profile
+
+        if profile:
+            st.markdown(f"""
+            <div class="content-card">
+                <h3>Profil: {profile['name']}</h3>
+                <p style="color: #6B7B8D; margin-top: 4px;">Wiek: {profile['age']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            if profile['allergens']:
+                tags = "".join(f'<span style="background:rgba(0,96,137,0.1);color:#006089;border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;display:inline-block;margin:4px 6px 4px 0;">{a}</span>' for a in profile['allergens'])
+                st.markdown(f'<div class="content-card"><div style="font-size:14px;font-weight:700;color:#1B2B3A;margin-bottom:10px;">Alergeny i nietolerancje</div><div>{tags}</div></div>', unsafe_allow_html=True)
+
+            if st.button("EDYTUJ PROFIL", key="btn_edit_profile", type="primary"):
+                st.session_state.child_profile = None
+                st.rerun()
+
+        else:
+            st.markdown("""
+            <div class="content-card">
+                <h3>Profil Dziecka</h3>
+                <p style="color: #6B7B8D; margin-top: 8px;">Wprowadź dane dziecka i zaznacz alergeny, aby aktywować skaner produktów.</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+            name = st.text_input("Imię dziecka", key="inp_name", placeholder="np. Zosia")
+            age = st.text_input("Wiek", key="inp_age", placeholder="np. 3 lata")
+
+            st.markdown("<div style='font-weight:700;margin-top:20px;margin-bottom:8px;color:#1B2B3A;'>Alergeny i nietolerancje</div>", unsafe_allow_html=True)
+            selected = []
+            cols = st.columns(2)
+            for i, a in enumerate(PREDEFINED_ALLERGENS):
+                with cols[i % 2]:
+                    if st.checkbox(a, key=f"al_{i}"):
+                        selected.append(a)
+
+            custom = st.text_input("Inny alergen (opcjonalnie)", key="inp_custom", placeholder="np. Czekolada, Truskawki")
+
+            if st.button("ZAPISZ PROFIL", key="btn_save_profile", type="primary", use_container_width=True):
+                if name.strip():
+                    all_allergens = selected[:]
+                    if custom.strip():
+                        all_allergens.append(custom.strip())
+                    st.session_state.child_profile = {
+                        "name": name.strip(),
+                        "age": age.strip(),
+                        "allergens": all_allergens,
+                    }
+                    st.success(f"Profil {name.strip()} został pomyślnie zapisany i aktywowany w skanerze")
+                    st.rerun()
 
     elif st.session_state.page == "form":
-        col_a, col_b = st.columns(2)
-        with col_a:
-            selected = st.selectbox("Wybierz opcję", SAMPLE_ITEMS, key="selected_item")
-        with col_b:
-            cat = st.selectbox("Wybierz kategorię", list(SAMPLE_CATEGORIES.keys()), key="selected_category")
-        sub = SAMPLE_CATEGORIES.get(cat, [])
-        if sub:
-            st.selectbox("Podkategoria", sub)
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        col_1, col_2 = st.columns(2)
-        with col_1:
-            st.button("WYCZYŚĆ", key="btn_clear", use_container_width=True)
-        with col_2:
-            if st.button("ZAPISZ", key="btn_save", type="primary", use_container_width=True):
-                st.success("Przykładowy zapis — dane do podpięcia w przyszłości.")
+        st.markdown("""
+        <div class="content-card">
+            <h3>Formularz</h3>
+            <p style="color: #6B7B8D; margin-top: 8px;">Miejsce na przyszłe funkcjonalności.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
     elif st.session_state.page == "settings":
         st.markdown("""
         <div class="content-card">
-            <h3>Konfiguracja szkieletu</h3>
-            <p style="color: #6B7B8D; margin-top: 8px;">Miejsce na przyszłe ustawienia aplikacji.</p>
+            <h3>Ustawienia</h3>
+            <p style="color: #6B7B8D; margin-top: 8px;">Konfiguracja aplikacji PureBaby.</p>
         </div>
         """, unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 9. iOS BOTTOM BAR — dolny pasek nawigacji
 # ══════════════════════════════════════════════════════════════════════════════
-page_names = {"home": "HOME", "form": "FORM", "settings": "USTAW"}
-page_icons = {"home": SVG_HOME, "form": SVG_ADD_DATA, "settings": SVG_SETTINGS}
+page_names = {"home": "HOME", "profile": "PROFIL", "form": "FORM", "settings": "USTAW"}
+page_icons = {"home": SVG_HOME, "profile": SVG_BABY, "form": SVG_ADD_DATA, "settings": SVG_SETTINGS}
 bottom_items = "".join(
     f'<div class="ios-action-btn {"active" if st.session_state.page==pg else ""}" data-action="action=nav&page={pg}">'
     f'<span class="ios-action-icon">{page_icons[pg]}</span>'
     f'<span class="ios-action-text">{page_names[pg]}</span></div>'
-    for pg in ["home", "form", "settings"]
+    for pg in ["home", "profile", "form", "settings"]
 )
 st.markdown(f'<div class="ios-bottom-bar-wrapper">{bottom_items}</div>', unsafe_allow_html=True)
 
