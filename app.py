@@ -1595,7 +1595,69 @@ bottom_items = "".join(
 st.markdown(f'<div class="ios-bottom-bar-wrapper">{bottom_items}</div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 10. PARENT MESSAGE LISTENER — odbiera postMessage z kamery (localStorage polling)
+# 10. JS BRIDGE — click handler for data-action elements + localStorage polling
+# ══════════════════════════════════════════════════════════════════════════════
+st.components.v1.html("""
+<script>
+(function() {
+    var pdoc = document;
+    try {
+        if (window.parent && window.parent.document) {
+            pdoc = window.parent.document;
+        }
+    } catch(e) {}
+    var pwin = window.parent;
+
+    pwin.sendActionToStreamlit = function(s) {
+        var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
+        if (i) {
+            i.focus();
+            var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
+            setter.call(i, s + '&ts=' + Date.now());
+            i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
+            i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
+            i.dispatchEvent(new pwin.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            i.blur();
+        }
+    };
+
+    pwin.trainerClickHandler = function(e) {
+        var el = e.target;
+        while (el && el !== pdoc.body) {
+            if (el.hasAttribute && el.hasAttribute('data-action')) {
+                e.preventDefault();
+                e.stopPropagation();
+                var actionStr = el.getAttribute('data-action');
+                if (pwin.sendActionToStreamlit) {
+                    pwin.sendActionToStreamlit(actionStr);
+                }
+                return;
+            }
+            el = el.parentElement;
+        }
+    };
+
+    function attachListeners() {
+        if (!pdoc.body) return;
+        pdoc.body.removeEventListener('click', pwin.trainerClickHandler);
+        pdoc.body.addEventListener('click', pwin.trainerClickHandler);
+        pdoc.body.setAttribute('data-bridge-v5', 'true');
+    }
+
+    if (pdoc.readyState === 'complete' || pdoc.readyState === 'interactive') {
+        attachListeners();
+    } else {
+        pdoc.addEventListener('DOMContentLoaded', attachListeners);
+    }
+    setTimeout(attachListeners, 500);
+    setTimeout(attachListeners, 2000);
+    setTimeout(attachListeners, 5000);
+})();
+</script>
+""", height=0)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 11. PARENT MESSAGE LISTENER — odbiera postMessage z kamery (localStorage polling)
 # ══════════════════════════════════════════════════════════════════════════════
 st.components.v1.html("""
 <script>
