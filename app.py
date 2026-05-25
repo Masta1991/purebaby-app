@@ -28,7 +28,7 @@ if not os.path.exists(ICON_DIR):
 icon_src = os.path.join(ICON_DIR, "szkielet.png")
 icon_512_path = os.path.join(ICON_DIR, "icon_512.png")
 icon_fav_path = os.path.join(BASE_DIR, "zdjecia", "icon.png")
-logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo aplikacji.png")
+logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo_white_large.png")
 
 @st.cache_data
 def _process_icons():
@@ -417,12 +417,13 @@ def inject_custom_css():
         min-width: 0;
     }
     .ios-top-logo {
-        height: 36px;
+        height: 42px;
         width: auto;
         background: #ffffff;
-        border-radius: 8px;
-        padding: 2px;
+        border-radius: 10px;
+        padding: 4px 8px;
         object-fit: contain;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
     .ios-nav-title {
         font-size: 16px;
@@ -782,7 +783,7 @@ if "scanned_code" not in st.session_state:
 # ══════════════════════════════════════════════════════════════════════════════
 qp = st.query_params
 
-for pg in ["home", "form", "settings", "profile"]:
+for pg in ["home", "form", "settings", "profile", "scanner"]:
     if qp.get("nav") == pg:
         st.session_state.page = pg
         st.session_state.mobile_menu = False
@@ -848,6 +849,7 @@ menu_class = "mobile-menu-dropdown show" if st.session_state.mobile_menu else "m
 menu_items = [
     ("home", "Strona Główna", SVG_HOME),
     ("profile", "Profil Dziecka", SVG_BABY),
+    ("scanner", "Skaner", SVG_ADD_DATA),
     ("form", "Formularz", SVG_ADD_DATA),
     ("settings", "Ustawienia", SVG_SETTINGS),
 ]
@@ -972,7 +974,7 @@ def sprawdz_sklad(kod_ean, alergie_dziecka):
 # ══════════════════════════════════════════════════════════════════════════════
 PUREBABY_PRODUCTS = [
     {
-        "name": "Wet Water Wipes chusteczki 99,9% wody (60 szt.)",
+        "name": "Chusteczki nawilżane 99,9% wody",
         "price": "5,99 zł",
         "old_price": "8,50 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_319_500_500/chusteczki-nawilzane-99%2C9-wody.jpg",
@@ -980,7 +982,7 @@ PUREBABY_PRODUCTS = [
         "badge": "-30%"
     },
     {
-        "name": "Flush Water Wipes chusteczki z pantenolem (60 szt.)",
+        "name": "Chusteczki nawilżane z pantenolem",
         "price": "6,50 zł",
         "old_price": "9,99 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_358_500_500/chusteczki-nawilzane-z-pantenolem.jpg",
@@ -988,42 +990,42 @@ PUREBABY_PRODUCTS = [
         "badge": "-35%"
     },
     {
-        "name": "Cotton Wipes ręczniki jednorazowe (60 szt.)",
+        "name": "Ręczniki jednorazowe bawełniane",
         "price": "18,99 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_308_500_500/bawelniane-reczniki-jednorazowe.jpg",
         "url": "https://purebaby.com.pl/reczniki-jednorazowe-bawelniane-cotton-wipes",
         "badge": "Bestseller"
     },
     {
-        "name": "podkłady higieniczne chłonne 45×60 cm (50 szt.)",
+        "name": "Podkłady higieniczne chłonne",
         "price": "49,99 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_349_500_500/podklady-higieniczne-do-przewijania.jpg",
         "url": "https://purebaby.com.pl/podklady-higieniczne-chlonne-male",
         "badge": ""
     },
     {
-        "name": "Eco Wipes ręczniki jednorazowe (60 szt.)",
+        "name": "Ręczniki jednorazowe Eco Wipes",
         "price": "13,99 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_356_500_500/reczniki-jednorazowe-Eco-Wipes.jpg",
         "url": "https://purebaby.com.pl/reczniki-jednorazowe-biodegradowalne-eco-wipes",
         "badge": "Nowość"
     },
     {
-        "name": "Water Toilet Paper nawilżany papier (60 szt.)",
+        "name": "Nawilżany papier toaletowy",
         "price": "8,60 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_292_500_500/nawilzany-papier-toaletowy.jpg",
         "url": "https://purebaby.com.pl/papier-nawilzany-water-toilet-paper",
         "badge": "Nowość"
     },
     {
-        "name": "Wet Water Wipes chusteczki XXL (60 szt.)",
+        "name": "Chusteczki nawilżane XXL",
         "price": "13,99 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_326_500_500/chusteczki-nawilzane-XXL.jpg",
         "url": "https://purebaby.com.pl/chusteczki-nawilzane-wet-water-wipes-XXL",
         "badge": ""
     },
     {
-        "name": "podkłady higieniczne chłonne 60×90 cm (20 szt.)",
+        "name": "Podkłady higieniczne duże",
         "price": "34,99 zł",
         "image": "https://purebaby.com.pl/environment/cache/images/productGfx_343_500_500/podklady-higieniczne-chlonne.jpg",
         "url": "https://purebaby.com.pl/podklady-higieniczne-duze",
@@ -1070,139 +1072,171 @@ def render_product_carousel():
     </div>
     
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
     .pb-carousel-container {
-        background: #ffffff;
-        border-radius: 20px;
-        padding: 20px;
-        margin: 16px 0;
-        border: 1px solid rgba(0, 0, 0, 0.04);
+        background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        border-radius: 24px;
+        padding: 24px 20px;
+        margin: 20px 0;
+        border: 1px solid rgba(0, 96, 137, 0.08);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
     .pb-carousel-header {
-        margin-bottom: 16px;
+        margin-bottom: 20px;
         padding-left: 4px;
     }
     .pb-carousel-title {
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 800;
         color: #006089;
         display: block;
+        letter-spacing: -0.3px;
+        line-height: 1.2;
     }
     .pb-carousel-subtitle {
-        font-size: 12px;
-        color: #6B7B8D;
+        font-size: 13px;
+        color: #64748b;
         font-weight: 500;
+        margin-top: 4px;
+        display: block;
+        letter-spacing: 0.1px;
     }
     .pb-carousel-track {
         display: flex;
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        gap: 14px;
-        padding-bottom: 8px;
+        gap: 16px;
+        padding-bottom: 12px;
         scroll-snap-type: x mandatory;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
     }
     .pb-carousel-track::-webkit-scrollbar {
-        height: 6px;
+        height: 5px;
     }
     .pb-carousel-track::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 3px;
+        background: transparent;
+        border-radius: 10px;
     }
     .pb-carousel-track::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-    }
-    .pb-carousel-track::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        background: linear-gradient(90deg, #006089, #0089b3);
+        border-radius: 10px;
     }
     .pb-product-card {
-        flex: 0 0 180px;
-        min-width: 180px;
-        max-width: 180px;
+        flex: 0 0 190px;
+        min-width: 190px;
+        max-width: 190px;
         background: #ffffff;
-        border-radius: 15px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-radius: 18px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
         overflow: hidden;
         text-decoration: none !important;
         color: inherit;
         position: relative;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         scroll-snap-align: start;
         display: block;
+        border: 1px solid rgba(0, 0, 0, 0.04);
     }
     .pb-product-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 4px 16px rgba(0, 96, 137, 0.15);
+        transform: translateY(-6px);
+        box-shadow: 0 8px 25px rgba(0, 96, 137, 0.12);
+        border-color: rgba(0, 96, 137, 0.15);
     }
     .pb-badge {
         position: absolute;
-        top: 8px;
-        left: 8px;
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-size: 10px;
+        top: 10px;
+        left: 10px;
+        padding: 5px 10px;
+        border-radius: 10px;
+        font-size: 11px;
         font-weight: 700;
         color: #ffffff;
         z-index: 2;
+        letter-spacing: 0.3px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
     .pb-image-wrapper {
         width: 100%;
-        height: 140px;
+        height: 150px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #f8fafc;
-        padding: 12px;
+        background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+        padding: 16px;
+        position: relative;
+    }
+    .pb-image-wrapper::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(0, 96, 137, 0.1), transparent);
     }
     .pb-image-wrapper img {
-        max-width: 100%;
-        max-height: 100%;
+        max-width: 85%;
+        max-height: 85%;
         object-fit: contain;
+        transition: transform 0.3s ease;
+    }
+    .pb-product-card:hover .pb-image-wrapper img {
+        transform: scale(1.05);
     }
     .pb-product-info {
-        padding: 12px;
+        padding: 14px 16px 16px;
     }
     .pb-product-name {
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 600;
-        color: #1B2B3A;
-        line-height: 1.3;
-        margin-bottom: 6px;
+        color: #1e293b;
+        line-height: 1.4;
+        margin-bottom: 8px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        height: 32px;
+        min-height: 36px;
+        letter-spacing: -0.1px;
     }
     .pb-old-price {
-        font-size: 11px;
+        font-size: 12px;
         color: #94a3b8;
         text-decoration: line-through;
         margin-bottom: 2px;
+        font-weight: 500;
     }
     .pb-price {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 800;
         color: #006089;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
+        letter-spacing: -0.3px;
     }
     .pb-buy-btn {
         display: block;
         width: 100%;
-        padding: 8px 0;
-        background: #006089;
+        padding: 10px 0;
+        background: linear-gradient(135deg, #006089 0%, #0078a8 100%);
         color: #ffffff;
         text-align: center;
-        border-radius: 10px;
-        font-size: 12px;
+        border-radius: 12px;
+        font-size: 13px;
         font-weight: 700;
-        transition: background 0.2s ease;
+        transition: all 0.2s ease;
+        letter-spacing: 0.2px;
+        box-shadow: 0 2px 8px rgba(0, 96, 137, 0.2);
     }
     .pb-product-card:hover .pb-buy-btn {
-        background: #004d6e;
+        background: linear-gradient(135deg, #004d6e 0%, #006089 100%);
+        box-shadow: 0 4px 12px rgba(0, 96, 137, 0.3);
     }
     </style>
-    """, height=300)
+    """, height=320)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
