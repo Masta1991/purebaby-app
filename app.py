@@ -838,7 +838,7 @@ st.markdown(f"""
     </div>
     <div class="ios-nav-center">
       <div class="ios-nav-title">PureBaby</div>
-      <div class="ios-nav-subtitle">{today_label} · v1</div>
+      <div class="ios-nav-subtitle">{today_label} · v5</div>
     </div>
     <div class="ios-avatar">PB</div>
   </div>
@@ -872,7 +872,7 @@ with col_side:
         <div>
             <div class="tile-label">PANEL DOWODZENIA</div>
             <div style="font-size: 22px; font-weight: 800; color: #1B2B3A; margin-top: 10px;">PureBaby</div>
-            <div style="font-size: 13px; color: #6B7B8D; margin-top: 5px;">{today_label} · v1</div>
+            <div style="font-size: 13px; color: #6B7B8D; margin-top: 5px;">{today_label} · v5</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1082,15 +1082,15 @@ with col_main:
                                     lastCode = decodedText;
                                     if (msgs) msgs.textContent = 'Odczytano kod, analizuję...';
                                     scanner.stop();
-                                    var url = new URL(window.top.location.href);
-                                    url.searchParams.set('barcode', decodedText);
-                                    window.top.location.href = url.toString();
+                                    localStorage.setItem('purebaby_barcode', decodedText);
+                                    localStorage.setItem('purebaby_ts', Date.now().toString());
                                 }
                             },
                             function() {}
                         ).catch(function(err) {
                             if (msgs) msgs.textContent = 'Nie można uruchomić kamery.';
-                            window.parent.postMessage({type: 'cam_off'}, '*');
+                            localStorage.setItem('purebaby_cam_off', '1');
+                            localStorage.setItem('purebaby_ts', Date.now().toString());
                         });
                     }
                     if (typeof Html5Qrcode === 'undefined') {
@@ -1307,43 +1307,46 @@ st.components.v1.html("""<script>
 st.markdown("""
 <script>
 (function() {
-    if (window._pb_msg_listener) return;
-    window._pb_msg_listener = true;
+    if (window._pb_poll) return;
+    window._pb_poll = true;
 
-    window.sendActionToStreamlit = function(s) {
-        var i = document.querySelector('input[aria-label="js_data_exchange"]');
-        if (i) {
-            i.focus();
-            var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-            setter.call(i, s + '&ts=' + Date.now());
-            i.dispatchEvent(new Event('input', { bubbles: true }));
-            i.dispatchEvent(new Event('change', { bubbles: true }));
-            i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-            i.blur();
-            console.log('[PureBaby] sendActionToStreamlit OK:', s);
-        } else {
-            console.warn('[PureBaby] input not found, falling back to URL reload');
-        }
-    };
-
-    window.addEventListener('message', function(e) {
-        var d = e.data;
-        if (!d) return;
-        console.log('[PureBaby] message received:', d);
-        if (d.type === 'barcode' && d.code) {
-            var i = document.querySelector('input[aria-label="js_data_exchange"]');
-            if (i) {
-                sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(d.code));
-            } else {
-                var url = new URL(window.location);
-                url.searchParams.set('barcode', d.code);
-                window.location.href = url.toString();
+    var lastTs = '';
+    setInterval(function() {
+        var ts = localStorage.getItem('purebaby_ts');
+        if (ts && ts !== lastTs) {
+            lastTs = ts;
+            var code = localStorage.getItem('purebaby_barcode');
+            if (code) {
+                localStorage.removeItem('purebaby_barcode');
+                localStorage.removeItem('purebaby_ts');
+                var i = document.querySelector('input[aria-label="js_data_exchange"]');
+                if (i) {
+                    i.focus();
+                    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                    setter.call(i, 'action=barcode&code=' + encodeURIComponent(code) + '&ts=' + Date.now());
+                    i.dispatchEvent(new Event('input', { bubbles: true }));
+                    i.dispatchEvent(new Event('change', { bubbles: true }));
+                    i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                    i.blur();
+                }
+            }
+            var camOff = localStorage.getItem('purebaby_cam_off');
+            if (camOff === '1') {
+                localStorage.removeItem('purebaby_cam_off');
+                localStorage.removeItem('purebaby_ts');
+                var i = document.querySelector('input[aria-label="js_data_exchange"]');
+                if (i) {
+                    i.focus();
+                    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+                    setter.call(i, 'action=cam_off&ts=' + Date.now());
+                    i.dispatchEvent(new Event('input', { bubbles: true }));
+                    i.dispatchEvent(new Event('change', { bubbles: true }));
+                    i.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                    i.blur();
+                }
             }
         }
-        if (d.type === 'cam_off') {
-            sendActionToStreamlit('action=cam_off');
-        }
-    });
+    }, 500);
 })();
 </script>
 """, unsafe_allow_html=True)
