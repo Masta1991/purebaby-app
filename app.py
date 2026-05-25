@@ -30,6 +30,7 @@ icon_512_path = os.path.join(ICON_DIR, "icon_512.png")
 icon_fav_path = os.path.join(BASE_DIR, "zdjecia", "icon.png")
 logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo_transparent_large.png")
 
+@st.cache_data
 def _process_icons():
     if not os.path.exists(icon_src):
         try:
