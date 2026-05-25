@@ -761,6 +761,25 @@ if "show_camera" not in st.session_state:
 # 5. ACTION PROCESSOR
 # ══════════════════════════════════════════════════════════════════════════════
 qp = st.query_params
+
+# Kamera: off
+if qp.get("cam_off") == "1":
+    st.session_state.show_camera = False
+    st.query_params.clear()
+
+# Kamera: zeskanowano kod
+barcode_qp = qp.get("barcode")
+if barcode_qp and st.session_state.child_profile:
+    name, ingredients = fetch_product(barcode_qp)
+    if name is None:
+        st.session_state.scan_result = ("not_found", None, barcode_qp, "")
+    else:
+        result, found, pname = check_allergens(name, ingredients, st.session_state.child_profile["allergens"])
+        st.session_state.scan_result = (result, found, pname, ingredients)
+    st.session_state.show_camera = False
+    st.query_params.clear()
+    st.rerun()
+
 for pg in ["home", "form", "settings", "profile"]:
     if qp.get("nav") == pg:
         st.session_state.page = pg
@@ -991,11 +1010,7 @@ with col_main:
                 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
                 <script>
                 (function() {
-                    function waitForBridge(cb) {
-                        if (window.parent.sendActionToStreamlit) { cb(); return; }
-                        setTimeout(function() { waitForBridge(cb); }, 200);
-                    }
-                    waitForBridge(function() {
+                    function startScanner() {
                         var lastCode = '';
                         var msgs = document.getElementById('scan-msg');
                         var scanner = new Html5Qrcode("reader");
@@ -1016,20 +1031,23 @@ with col_main:
                                     lastCode = decodedText;
                                     if (msgs) msgs.textContent = 'Odczytano kod, sprawdzam...';
                                     scanner.stop().then(function() {
-                                        window.parent.sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(decodedText));
+                                        window.parent.location.search = '?barcode=' + encodeURIComponent(decodedText);
                                     }).catch(function() {
-                                        window.parent.sendActionToStreamlit('action=cam_off');
+                                        window.parent.location.search = '?cam_off=1';
                                     });
                                 }
                             },
                             function() {}
                         ).catch(function(err) {
-                            if (msgs) msgs.textContent = 'Nie można uruchomić kamery. Spróbuj wpisać kod ręcznie.';
-                            setTimeout(function() {
-                                window.parent.sendActionToStreamlit('action=cam_off');
-                            }, 3000);
+                            if (msgs) msgs.textContent = 'Nie mozna uruchomic kamery.';
+                            setTimeout(function() { window.parent.location.search = '?cam_off=1'; }, 3000);
                         });
-                    });
+                    }
+                    if (typeof Html5Qrcode === 'undefined') {
+                        setTimeout(startScanner, 500);
+                    } else {
+                        startScanner();
+                    }
                 })();
                 </script>
                 """, height=400)
