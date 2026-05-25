@@ -619,25 +619,47 @@ def inject_custom_css():
         border-radius: 12px !important;
     }
 
-    div[data-baseweb="input"] input,
+    .stTextInput,
+    .stTextInput > div,
+    .stTextInput label,
+    div[data-testid="stTextInput"],
+    div[data-testid="stTextInput"] > label {
+        background: transparent !important;
+        color: #1B2B3A !important;
+        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
     .stTextInput input,
-    input[aria-label*="Imię"],
-    input[aria-label*="Wiek"],
-    input[placeholder*="alergen"],
-    input:not([type="checkbox"]):not([type="radio"]) {
+    .stTextInput div[data-baseweb="input"] input,
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #ffffff !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid #d0d5dd !important;
         border-radius: 12px !important;
         padding: 12px 16px !important;
         color: #1B2B3A !important;
         font-size: 15px !important;
+        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
         caret-color: #006089 !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    .stTextInput div[data-baseweb="input"] input:focus,
+    div[data-testid="stTextInput"] input:focus {
+        border-color: #006089 !important;
+        box-shadow: 0 0 0 2px rgba(0,96,137,0.15) !important;
     }
 
-    .stMultiSelect div[data-baseweb="select"] > div {
+    .stMultiSelect div[data-baseweb="select"] > div,
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"] {
         background-color: #ffffff !important;
-        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid #d0d5dd !important;
         border-radius: 12px !important;
+        font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        color: #1B2B3A !important;
+    }
+    .stMultiSelect div[data-baseweb="select"] > div:hover {
+        border-color: #006089 !important;
     }
 </style>
 """, unsafe_allow_html=True)
