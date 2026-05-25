@@ -752,6 +752,10 @@ if "child_profile" not in st.session_state:
     st.session_state.child_profile = load_profile()
 if "old_profile" not in st.session_state:
     st.session_state.old_profile = None
+if "scan_result" not in st.session_state:
+    st.session_state.scan_result = None
+if "show_camera" not in st.session_state:
+    st.session_state.show_camera = False
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. ACTION PROCESSOR
@@ -784,6 +788,20 @@ if js_data and js_data != st.session_state.last_js_data:
             st.rerun()
         elif action == "v_edit":
             st.session_state.page = "settings"
+            st.rerun()
+        elif action == "barcode":
+            barcode = parts.get("code", "")
+            if barcode and st.session_state.child_profile:
+                name, ingredients = fetch_product(barcode)
+                if name is None:
+                    st.session_state.scan_result = ("not_found", None, barcode, "")
+                else:
+                    result, found, pname = check_allergens(name, ingredients, st.session_state.child_profile["allergens"])
+                    st.session_state.scan_result = (result, found, pname, ingredients)
+                st.session_state.show_camera = False
+                st.rerun()
+        elif action == "cam_off":
+            st.session_state.show_camera = False
             st.rerun()
     except Exception as e:
         print(f"Action error: {e}")
@@ -852,6 +870,66 @@ with col_side:
     st.markdown(tiles_html + "</div>", unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
+# 7B. SCANNER ENGINE — Open Food Facts API + allergen matching
+# ══════════════════════════════════════════════════════════════════════════════
+
+ALLERGEN_SYNONYMS = {
+    "Mleko krowie (laktoza, kazeina)": ["mleko","laktoza","kazeina","serwatka","masło","mleczna","mleczne","mleczny","śmietana","twaróg","ser","mlekiem","mlekiem"],
+    "Orzechy (ziemne, drzewne)": ["orzech","orzechy","orzechów","orzechami","orzeszki","migdał","migdały","neregowca","pistacje","laskowe","ziemne"],
+    "Gluten/Pszenica": ["gluten","pszenica","pszenny","pszenna","jęczmień","żyto","mąka","owsiana","owsiane","semolina","mąki"],
+    "Jaja": ["jaj","jaja","jajka","jajko","jajeczny","jajeczne","żółtko","żółtka","białko"],
+    "Soja": ["soja","sojowe","sojowy","sojowa","soi","tofu","edamame","lecytyna"],
+    "Skorupiaki": ["krewetki","krab","homar","homara","skorupiak","skorupiaki"],
+    "Ryby": ["ryba","ryby","łosoś","tuńczyk","dorsz","śledź","sardynki","rybny","rybne","łososia"],
+    "Sezam": ["sezam","sezamu","sezamowy","sezamowe"],
+    "Konserwanty": ["konserwant","benzoesan","sorbinian","azotan","siarczyn","siarczyny","glutaminian","E2",
+        "E210","E211","E212","E213","E220","E221","E222","E223","E224","E225","E226","E227","E228",
+        "E249","E250","E251","E252"],
+    "Sztuczne barwniki": ["barwnik","barwniki","E1","tartrazyna","azorubina","koszenila","E102","E104","E110",
+        "E122","E124","E129","E131","E132","E133","E142","E151","E155"],
+}
+
+def check_allergens(product_name, ingredients_text, child_allergens):
+    if not child_allergens:
+        return "no_profile", None, product_name
+
+    if not ingredients_text:
+        return "no_ingredients", None, product_name
+
+    text = ingredients_text.lower()
+
+    found = []
+    for allergen in child_allergens:
+        synonyms = ALLERGEN_SYNONYMS.get(allergen, [allergen.lower()])
+        for syn in synonyms:
+            if syn in text:
+                found.append(allergen)
+                break
+
+    return "found" if found else "safe", found, product_name
+
+def fetch_product(barcode):
+    import urllib.request
+    try:
+        url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
+        req = urllib.request.Request(url, headers={"User-Agent": "PureBaby/1.0"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+        if data.get("status") == 1:
+            p = data.get("product", {})
+            name = p.get("product_name") or p.get("generic_name") or "Nieznany produkt"
+            ingredients = (
+                p.get("ingredients_text_pl") or
+                p.get("ingredients_text") or
+                p.get("ingredients_text_en") or
+                ""
+            )
+            return name, ingredients
+    except Exception:
+        pass
+    return None, None
+
+# ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
 # ══════════════════════════════════════════════════════════════════════════════
 with col_main:
@@ -870,6 +948,106 @@ with col_main:
                 </div>
             </div>
             """, unsafe_allow_html=True)
+
+            # ── Skaner ──
+            st.markdown("""
+            <div class="content-card" id="scanner-card">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="#006089" stroke-width="2" fill="none"><path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path><path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
+                    <h3 style="margin:0;color:#006089;">Skaner produktów</h3>
+                </div>
+                <div id="scan-area" style="text-align:center;padding:16px;background:#F2F7FA;border-radius:14px;margin-bottom:12px;">
+                    <div id="scan-placeholder">
+                        <p style="color:#6B7B8D;margin:0 0 8px 0;">Zeskanuj kod kreskowy produktu</p>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            col_s1, col_s2, col_s3 = st.columns([2, 1, 1])
+            with col_s1:
+                barcode_manual = st.text_input("Lub wpisz kod kreskowy ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
+            with col_s2:
+                st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+                if st.button("SKANUJ", key="btn_scan", type="primary", use_container_width=True):
+                    if barcode_manual.strip():
+                        name, ingredients = fetch_product(barcode_manual.strip())
+                        if name is None:
+                            st.error("Nie znaleziono produktu o tym kodzie.")
+                        else:
+                            result, found, pname = check_allergens(name, ingredients, profile["allergens"])
+                            st.session_state.scan_result = (result, found, pname, ingredients)
+                            st.rerun()
+                    else:
+                        st.warning("Wpisz kod kreskowy.")
+            with col_s3:
+                st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+                if not st.session_state.show_camera:
+                    if st.button("APARAT", key="btn_camera", use_container_width=True):
+                        st.session_state.show_camera = True
+                        st.rerun()
+                else:
+                    if st.button("ZAMKNIJ", key="btn_cam_close", use_container_width=True):
+                        st.session_state.show_camera = False
+                        st.rerun()
+
+            if st.session_state.show_camera:
+                st.components.v1.html("""
+                <div id="reader" style="width:100%;max-width:400px;margin:auto;"></div>
+                <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+                <script>
+                (function() {
+                    var lastCode = '';
+                    var scanner = new Html5Qrcode("reader");
+                    scanner.start(
+                        { facingMode: "environment" },
+                        { fps: 10, qrbox: { width: 250, height: 100 } },
+                        function(decodedText) {
+                            if (decodedText !== lastCode) {
+                                lastCode = decodedText;
+                                scanner.stop().then(function() {
+                                    window.parent.sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(decodedText));
+                                });
+                            }
+                        },
+                        function() {}
+                    ).catch(function() {
+                        window.parent.sendActionToStreamlit('action=cam_off');
+                    });
+                })();
+                </script>
+                """, height=350)
+
+            # Wyświetl wynik skanowania
+            if st.session_state.get("scan_result"):
+                result, found, pname, ingredients = st.session_state.scan_result
+                if result == "safe":
+                    st.markdown(f"""
+                    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:16px;padding:24px;margin-top:16px;">
+                        <div style="font-size:20px;font-weight:800;color:#166534;">Produkt bezpieczny dla {profile['name']}!</div>
+                        <p style="color:#166534;margin-top:8px;">W produkcie <strong>{pname}</strong> nie znaleźliśmy składników, na które {profile['name']} ma alergię.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif result == "found":
+                    allergens_html = ", ".join(f"<strong>{a}</strong>" for a in found)
+                    st.markdown(f"""
+                    <div style="background:#fecaca;border:1px solid #f87171;border-radius:16px;padding:24px;margin-top:16px;">
+                        <div style="font-size:20px;font-weight:800;color:#991b1b;">UWAGA! Produkt NIEBEZPIECZNY dla {profile['name']}!</div>
+                        <p style="color:#991b1b;margin-top:8px;">W składzie produktu <strong>{pname}</strong> wykryto: {allergens_html}.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif result == "no_ingredients":
+                    st.markdown(f"""
+                    <div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:16px;padding:24px;margin-top:16px;">
+                        <div style="font-size:18px;font-weight:800;color:#92400e;">Brak składu</div>
+                        <p style="color:#92400e;margin-top:8px;">Produkt <strong>{pname}</strong> został znaleziony, ale nie posiada listy składników w bazie.</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                elif result == "not_found":
+                    st.warning(f"Nie znaleziono produktu dla kodu: {pname}")
+                if st.button("WYCZYŚĆ WYNIK", key="btn_clear_scan"):
+                    st.session_state.scan_result = None
+                    st.rerun()
         else:
             st.markdown("""
             <div class="content-card">
@@ -968,13 +1146,13 @@ with col_main:
 # ══════════════════════════════════════════════════════════════════════════════
 # 9. iOS BOTTOM BAR — dolny pasek nawigacji
 # ══════════════════════════════════════════════════════════════════════════════
-page_names = {"home": "HOME", "profile": "PROFIL", "form": "FORM", "settings": "USTAW"}
-page_icons = {"home": SVG_HOME, "profile": SVG_BABY, "form": SVG_ADD_DATA, "settings": SVG_SETTINGS}
+page_names = {"home": "HOME", "profile": "PROFIL", "settings": "USTAW"}
+page_icons = {"home": SVG_HOME, "profile": SVG_BABY, "settings": SVG_SETTINGS}
 bottom_items = "".join(
     f'<div class="ios-action-btn {"active" if st.session_state.page==pg else ""}" data-action="action=nav&page={pg}">'
     f'<span class="ios-action-icon">{page_icons[pg]}</span>'
     f'<span class="ios-action-text">{page_names[pg]}</span></div>'
-    for pg in ["home", "profile", "form", "settings"]
+    for pg in ["home", "profile", "settings"]
 )
 st.markdown(f'<div class="ios-bottom-bar-wrapper">{bottom_items}</div>', unsafe_allow_html=True)
 
