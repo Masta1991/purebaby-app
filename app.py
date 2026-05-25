@@ -800,13 +800,12 @@ with col_main:
             name = st.text_input("Imię dziecka", key="inp_name", placeholder="np. Zosia")
             age = st.text_input("Wiek", key="inp_age", placeholder="np. 3 lata")
 
-            st.markdown("<div style='font-weight:700;margin-top:20px;margin-bottom:8px;color:#1B2B3A;'>Alergeny i nietolerancje</div>", unsafe_allow_html=True)
-            selected = []
-            cols = st.columns(2)
-            for i, a in enumerate(PREDEFINED_ALLERGENS):
-                with cols[i % 2]:
-                    if st.checkbox(a, key=f"al_{i}"):
-                        selected.append(a)
+            selected = st.multiselect(
+                "Alergeny i nietolerancje",
+                options=PREDEFINED_ALLERGENS,
+                key="sel_allergens",
+                placeholder="Wybierz alergeny..."
+            )
 
             custom = st.text_input("Inny alergen (opcjonalnie)", key="inp_custom", placeholder="np. Czekolada, Truskawki")
 
