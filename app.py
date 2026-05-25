@@ -950,73 +950,91 @@ with col_main:
             """, unsafe_allow_html=True)
 
             # ── Skaner ──
-            st.markdown("""
-            <div class="content-card" id="scanner-card">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                    <svg viewBox="0 0 24 24" width="22" height="22" stroke="#006089" stroke-width="2" fill="none"><path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path><path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
-                    <h3 style="margin:0;color:#006089;">Skaner produktów</h3>
+            if not st.session_state.show_camera:
+                st.markdown(f"""
+                <div class="content-card" style="text-align:center;padding:32px 24px;">
+                    <svg viewBox="0 0 24 24" width="36" height="36" stroke="#006089" stroke-width="1.5" fill="none" style="margin-bottom:12px;">
+                        <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
+                        <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
+                        <line x1="7" y1="12" x2="17" y2="12"></line>
+                    </svg>
+                    <h3 style="margin:0 0 4px 0;color:#006089;">Skaner produktów</h3>
+                    <p style="color:#6B7B8D;margin:0 0 16px 0;">Zeskanuj kod kreskowy produktu, aby sprawdzić alergeny</p>
                 </div>
-                <div id="scan-area" style="text-align:center;padding:16px;background:#F2F7FA;border-radius:14px;margin-bottom:12px;">
-                    <div id="scan-placeholder">
-                        <p style="color:#6B7B8D;margin:0 0 8px 0;">Zeskanuj kod kreskowy produktu</p>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
 
-            col_s1, col_s2, col_s3 = st.columns([2, 1, 1])
-            with col_s1:
-                barcode_manual = st.text_input("Lub wpisz kod kreskowy ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
-            with col_s2:
-                st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                if st.button("SKANUJ", key="btn_scan", type="primary", use_container_width=True):
-                    if barcode_manual.strip():
-                        name, ingredients = fetch_product(barcode_manual.strip())
-                        if name is None:
-                            st.error("Nie znaleziono produktu o tym kodzie.")
-                        else:
-                            result, found, pname = check_allergens(name, ingredients, profile["allergens"])
-                            st.session_state.scan_result = (result, found, pname, ingredients)
+                col_b1, col_b2 = st.columns([3, 1])
+                with col_b1:
+                    barcode_manual = st.text_input("Lub wpisz kod ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
+                with col_b2:
+                    st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+                    if st.button("SKANUJ", key="btn_scan_manual", type="primary", use_container_width=True):
+                        if barcode_manual.strip():
+                            name, ingredients = fetch_product(barcode_manual.strip())
+                            if name is None:
+                                st.session_state.scan_result = ("not_found", None, barcode_manual.strip(), "")
+                            else:
+                                result, found, pname = check_allergens(name, ingredients, profile["allergens"])
+                                st.session_state.scan_result = (result, found, pname, ingredients)
                             st.rerun()
-                    else:
-                        st.warning("Wpisz kod kreskowy.")
-            with col_s3:
-                st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-                if not st.session_state.show_camera:
-                    if st.button("APARAT", key="btn_camera", use_container_width=True):
+
+                col_a1, col_a2, col_a3 = st.columns([1, 2, 1])
+                with col_a2:
+                    if st.button("URUCHOM KAMERĘ", key="btn_camera_start", use_container_width=True):
                         st.session_state.show_camera = True
                         st.rerun()
-                else:
-                    if st.button("ZAMKNIJ", key="btn_cam_close", use_container_width=True):
-                        st.session_state.show_camera = False
-                        st.rerun()
-
-            if st.session_state.show_camera:
+            else:
                 st.components.v1.html("""
-                <div id="reader" style="width:100%;max-width:400px;margin:auto;"></div>
+                <div id="reader" style="width:100%;max-width:400px;margin:16px auto;"></div>
+                <div id="scan-msg" style="text-align:center;color:#6B7B8D;font-family:'Nunito',sans-serif;margin-top:8px;">Skieruj kamerę na kod kreskowy...</div>
                 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
                 <script>
                 (function() {
-                    var lastCode = '';
-                    var scanner = new Html5Qrcode("reader");
-                    scanner.start(
-                        { facingMode: "environment" },
-                        { fps: 10, qrbox: { width: 250, height: 100 } },
-                        function(decodedText) {
-                            if (decodedText !== lastCode) {
-                                lastCode = decodedText;
-                                scanner.stop().then(function() {
-                                    window.parent.sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(decodedText));
-                                });
-                            }
-                        },
-                        function() {}
-                    ).catch(function() {
-                        window.parent.sendActionToStreamlit('action=cam_off');
+                    function waitForBridge(cb) {
+                        if (window.parent.sendActionToStreamlit) { cb(); return; }
+                        setTimeout(function() { waitForBridge(cb); }, 200);
+                    }
+                    waitForBridge(function() {
+                        var lastCode = '';
+                        var msgs = document.getElementById('scan-msg');
+                        var scanner = new Html5Qrcode("reader");
+                        scanner.start(
+                            { facingMode: "environment" },
+                            { fps: 10, qrbox: { width: 300, height: 120 }, formatsToSupport: [ 
+                                Html5QrcodeSupportedFormats.EAN_8,
+                                Html5QrcodeSupportedFormats.EAN_13,
+                                Html5QrcodeSupportedFormats.UPC_A,
+                                Html5QrcodeSupportedFormats.UPC_E,
+                                Html5QrcodeSupportedFormats.CODE_128,
+                                Html5QrcodeSupportedFormats.CODE_39,
+                                Html5QrcodeSupportedFormats.ITF,
+                                Html5QrcodeSupportedFormats.CODABAR
+                            ]},
+                            function(decodedText) {
+                                if (decodedText !== lastCode) {
+                                    lastCode = decodedText;
+                                    if (msgs) msgs.textContent = 'Odczytano kod, sprawdzam...';
+                                    scanner.stop().then(function() {
+                                        window.parent.sendActionToStreamlit('action=barcode&code=' + encodeURIComponent(decodedText));
+                                    }).catch(function() {
+                                        window.parent.sendActionToStreamlit('action=cam_off');
+                                    });
+                                }
+                            },
+                            function() {}
+                        ).catch(function(err) {
+                            if (msgs) msgs.textContent = 'Nie można uruchomić kamery. Spróbuj wpisać kod ręcznie.';
+                            setTimeout(function() {
+                                window.parent.sendActionToStreamlit('action=cam_off');
+                            }, 3000);
+                        });
                     });
                 })();
                 </script>
-                """, height=350)
+                """, height=400)
+                if st.button("ZAMKNIJ KAMERĘ", key="btn_cam_close", use_container_width=True):
+                    st.session_state.show_camera = False
+                    st.rerun()
 
             # Wyświetl wynik skanowania
             if st.session_state.get("scan_result"):
