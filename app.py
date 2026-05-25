@@ -803,6 +803,9 @@ if js_data and js_data != st.session_state.last_js_data:
         elif action == "cam_off":
             st.session_state.show_camera = False
             st.rerun()
+        elif action == "cam_on":
+            st.session_state.show_camera = True
+            st.rerun()
     except Exception as e:
         print(f"Action error: {e}")
 
@@ -951,7 +954,7 @@ with col_main:
 
             # ── Skaner ──
             if not st.session_state.show_camera:
-                st.markdown(f"""
+                st.markdown("""
                 <div class="content-card" style="text-align:center;padding:32px 24px;">
                     <svg viewBox="0 0 24 24" width="36" height="36" stroke="#006089" stroke-width="1.5" fill="none" style="margin-bottom:12px;">
                         <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
@@ -959,10 +962,14 @@ with col_main:
                         <line x1="7" y1="12" x2="17" y2="12"></line>
                     </svg>
                     <h3 style="margin:0 0 4px 0;color:#006089;">Skaner produktów</h3>
-                    <p style="color:#6B7B8D;margin:0 0 16px 0;">Zeskanuj kod kreskowy produktu, aby sprawdzić alergeny</p>
+                    <p style="color:#6B7B8D;margin:0 0 20px 0;">Zeskanuj kod kreskowy produktu, aby sprawdzić alergeny</p>
+                    <div class="scanner-btn" data-action="action=cam_on" style="display:inline-block;background:#006089;color:#fff;border:none;border-radius:14px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform 0.15s ease;">
+                        URUCHOM KAMERĘ
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
+                st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
                 col_b1, col_b2 = st.columns([3, 1])
                 with col_b1:
                     barcode_manual = st.text_input("Lub wpisz kod ręcznie", key="inp_barcode", placeholder="np. 5901234567890")
@@ -977,12 +984,6 @@ with col_main:
                                 result, found, pname = check_allergens(name, ingredients, profile["allergens"])
                                 st.session_state.scan_result = (result, found, pname, ingredients)
                             st.rerun()
-
-                col_a1, col_a2, col_a3 = st.columns([1, 2, 1])
-                with col_a2:
-                    if st.button("URUCHOM KAMERĘ", key="btn_camera_start", use_container_width=True):
-                        st.session_state.show_camera = True
-                        st.rerun()
             else:
                 st.components.v1.html("""
                 <div id="reader" style="width:100%;max-width:400px;margin:16px auto;"></div>
