@@ -1072,7 +1072,6 @@ def render_product_carousel():
     <div class="pb-carousel-container">
         <div class="pb-carousel-header">
             <span class="pb-carousel-title">Polecane produkty PureBaby</span>
-            <span class="pb-carousel-subtitle">Bezpieczne dla dziecka od 1. dnia życia</span>
         </div>
         <div class="pb-carousel-track">
             """ + products_html + """
@@ -1088,7 +1087,7 @@ def render_product_carousel():
         background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
         border-radius: 24px;
         padding: 24px 20px;
-        margin: 20px 0;
+        margin: 8px 0 20px 0;
         border: 1px solid rgba(0, 96, 137, 0.08);
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
