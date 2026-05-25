@@ -403,6 +403,14 @@ def inject_custom_css():
         text-align: center;
         min-width: 0;
     }
+    .ios-top-logo {
+        height: 36px;
+        width: auto;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 2px;
+        object-fit: contain;
+    }
     .ios-nav-title {
         font-size: 16px;
         font-weight: 800;
@@ -753,6 +761,8 @@ if "child_profile" not in st.session_state:
     st.session_state.child_profile = load_profile()
 if "old_profile" not in st.session_state:
     st.session_state.old_profile = None
+if "scanned_code" not in st.session_state:
+    st.session_state.scanned_code = None
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 5. ACTION PROCESSOR
@@ -787,6 +797,16 @@ if js_data and js_data != st.session_state.last_js_data:
         elif action == "v_edit":
             st.session_state.page = "settings"
             st.rerun()
+        elif action == "barcode":
+            code = parts.get('code', '')
+            if code:
+                st.session_state.scanned_code = code
+                st.session_state.page = "home"
+                st.rerun()
+        elif action == "cam_off":
+            if "scanned_code" in st.session_state:
+                del st.session_state.scanned_code
+            st.rerun()
     except Exception as e:
         print(f"Action error: {e}")
 
@@ -803,10 +823,9 @@ st.markdown(f"""
       <span class="hbr"></span><span class="hbr"></span><span class="hbr"></span>
     </div>
     <div class="ios-nav-center">
-      <div class="ios-nav-title">PureBaby</div>
-      <div class="ios-nav-subtitle">{today_label} · v6</div>
+      <img src="data:image/png;base64,{ICON_B64}" alt="PureBaby" class="ios-top-logo">
     </div>
-    <div class="ios-avatar">PB</div>
+    <div class="ios-avatar" data-action="action=nav&page=scanner" style="cursor:pointer;">PB</div>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -936,6 +955,243 @@ def sprawdz_sklad(kod_ean, alergie_dziecka):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# 7C. PUREBABY PRODUCT CAROUSEL — horizontal recommendation panel
+# ══════════════════════════════════════════════════════════════════════════════
+PUREBABY_PRODUCTS = [
+    {
+        "name": "Wet Water Wipes chusteczki 99,9% wody (60 szt.)",
+        "price": "5,99 zł",
+        "old_price": "8,50 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_319_500_500/chusteczki-nawilzane-99%2C9-wody.jpg",
+        "url": "https://purebaby.com.pl/chusteczki-nawilzane-wet-water-wipes",
+        "badge": "-30%"
+    },
+    {
+        "name": "Flush Water Wipes chusteczki z pantenolem (60 szt.)",
+        "price": "6,50 zł",
+        "old_price": "9,99 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_358_500_500/chusteczki-nawilzane-z-pantenolem.jpg",
+        "url": "https://purebaby.com.pl/chusteczki-nawilzane-do-splukiwania",
+        "badge": "-35%"
+    },
+    {
+        "name": "Cotton Wipes ręczniki jednorazowe (60 szt.)",
+        "price": "18,99 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_308_500_500/bawelniane-reczniki-jednorazowe.jpg",
+        "url": "https://purebaby.com.pl/reczniki-jednorazowe-bawelniane-cotton-wipes",
+        "badge": "Bestseller"
+    },
+    {
+        "name": "podkłady higieniczne chłonne 45×60 cm (50 szt.)",
+        "price": "49,99 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_349_500_500/podklady-higieniczne-do-przewijania.jpg",
+        "url": "https://purebaby.com.pl/podklady-higieniczne-chlonne-male",
+        "badge": ""
+    },
+    {
+        "name": "Eco Wipes ręczniki jednorazowe (60 szt.)",
+        "price": "13,99 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_356_500_500/reczniki-jednorazowe-Eco-Wipes.jpg",
+        "url": "https://purebaby.com.pl/reczniki-jednorazowe-biodegradowalne-eco-wipes",
+        "badge": "Nowość"
+    },
+    {
+        "name": "Water Toilet Paper nawilżany papier (60 szt.)",
+        "price": "8,60 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_292_500_500/nawilzany-papier-toaletowy.jpg",
+        "url": "https://purebaby.com.pl/papier-nawilzany-water-toilet-paper",
+        "badge": "Nowość"
+    },
+    {
+        "name": "Wet Water Wipes chusteczki XXL (60 szt.)",
+        "price": "13,99 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_326_500_500/chusteczki-nawilzane-XXL.jpg",
+        "url": "https://purebaby.com.pl/chusteczki-nawilzane-wet-water-wipes-XXL",
+        "badge": ""
+    },
+    {
+        "name": "podkłady higieniczne chłonne 60×90 cm (20 szt.)",
+        "price": "34,99 zł",
+        "image": "https://purebaby.com.pl/environment/cache/images/productGfx_343_500_500/podklady-higieniczne-chlonne.jpg",
+        "url": "https://purebaby.com.pl/podklady-higieniczne-duze",
+        "badge": "Nowość"
+    },
+]
+
+def render_product_carousel():
+    products_html = ""
+    for p in PUREBABY_PRODUCTS:
+        badge_html = ""
+        if p["badge"]:
+            badge_color = "#dc2626" if p["badge"].startswith("-") else "#006089"
+            badge_html = f'<div class="pb-badge" style="background:{badge_color};">{p["badge"]}</div>'
+        
+        old_price_html = ""
+        if p.get("old_price"):
+            old_price_html = f'<div class="pb-old-price">{p["old_price"]}</div>'
+        
+        products_html += f'''
+        <a href="{p["url"]}" target="_blank" rel="noopener noreferrer" class="pb-product-card">
+            {badge_html}
+            <div class="pb-image-wrapper">
+                <img src="{p["image"]}" alt="{p["name"]}" loading="lazy" onerror="this.src='https://purebaby.com.pl/environment/cache/images/storefrontImages_130fe15d-3ac8-420d-a452-55ec72463626_297_0.png'">
+            </div>
+            <div class="pb-product-info">
+                <div class="pb-product-name">{p["name"]}</div>
+                {old_price_html}
+                <div class="pb-price">{p["price"]}</div>
+                <div class="pb-buy-btn">Kup teraz</div>
+            </div>
+        </a>
+        '''
+    
+    st.markdown(f"""
+    <div class="pb-carousel-container">
+        <div class="pb-carousel-header">
+            <span class="pb-carousel-title">Polecane produkty PureBaby</span>
+            <span class="pb-carousel-subtitle">Bezpieczne dla dziecka od 1. dnia życia</span>
+        </div>
+        <div class="pb-carousel-track">
+            {products_html}
+        </div>
+    </div>
+    
+    <style>
+    .pb-carousel-container {{
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 20px;
+        margin: 16px 0;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+    }}
+    .pb-carousel-header {{
+        margin-bottom: 16px;
+        padding-left: 4px;
+    }}
+    .pb-carousel-title {{
+        font-size: 18px;
+        font-weight: 800;
+        color: #006089;
+        display: block;
+    }}
+    .pb-carousel-subtitle {{
+        font-size: 12px;
+        color: #6B7B8D;
+        font-weight: 500;
+    }}
+    .pb-carousel-track {{
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 14px;
+        padding-bottom: 8px;
+        scroll-snap-type: x mandatory;
+    }}
+    .pb-carousel-track::-webkit-scrollbar {{
+        height: 6px;
+    }}
+    .pb-carousel-track::-webkit-scrollbar-track {{
+        background: #f1f5f9;
+        border-radius: 3px;
+    }}
+    .pb-carousel-track::-webkit-scrollbar-thumb {{
+        background: #cbd5e1;
+        border-radius: 3px;
+    }}
+    .pb-carousel-track::-webkit-scrollbar-thumb:hover {{
+        background: #94a3b8;
+    }}
+    .pb-product-card {{
+        flex: 0 0 180px;
+        min-width: 180px;
+        max-width: 180px;
+        background: #ffffff;
+        border-radius: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        text-decoration: none !important;
+        color: inherit;
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        scroll-snap-align: start;
+        display: block;
+    }}
+    .pb-product-card:hover {{
+        transform: translateY(-4px);
+        box-shadow: 0 4px 16px rgba(0, 96, 137, 0.15);
+    }}
+    .pb-badge {{
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 700;
+        color: #ffffff;
+        z-index: 2;
+    }}
+    .pb-image-wrapper {{
+        width: 100%;
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8fafc;
+        padding: 12px;
+    }}
+    .pb-image-wrapper img {{
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }}
+    .pb-product-info {{
+        padding: 12px;
+    }}
+    .pb-product-name {{
+        font-size: 12px;
+        font-weight: 600;
+        color: #1B2B3A;
+        line-height: 1.3;
+        margin-bottom: 6px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 32px;
+    }}
+    .pb-old-price {{
+        font-size: 11px;
+        color: #94a3b8;
+        text-decoration: line-through;
+        margin-bottom: 2px;
+    }}
+    .pb-price {{
+        font-size: 16px;
+        font-weight: 800;
+        color: #006089;
+        margin-bottom: 8px;
+    }}
+    .pb-buy-btn {{
+        display: block;
+        width: 100%;
+        padding: 8px 0;
+        background: #006089;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 700;
+        transition: background 0.2s ease;
+    }}
+    .pb-product-card:hover .pb-buy-btn {{
+        background: #004d6e;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+# ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
 # ══════════════════════════════════════════════════════════════════════════════
 with col_main:
@@ -955,252 +1211,232 @@ with col_main:
             </div>
             """, unsafe_allow_html=True)
 
-            # ── Skaner — samodzielnym komponentem (zero komunikacji z parentem) ──
-            import json as _json
-            child_allergens_json = _json.dumps(st.session_state.child_profile.get("allergens", []), ensure_ascii=False)
-            allergen_synonyms_json = _json.dumps(ALLERGEN_SYNONYMS, ensure_ascii=False)
-            unsafe_categories_json = _json.dumps(UNSAFE_CATEGORIES, ensure_ascii=False)
+        # ── Karuzela produktowa PureBaby — zawsze widoczna na stronie głównej ──
+        render_product_carousel()
 
-            st.components.v1.html(f"""
-            <style>
-            * {{ box-sizing: border-box; }}
-            body {{ font-family: 'Nunito', sans-serif; margin: 0; padding: 16px; background: #f8f9fa; }}
-            .card {{ background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }}
-            .center {{ text-align: center; }}
-            .btn {{ display: inline-block; background: #006089; color: #fff; border: none; border-radius: 14px; padding: 14px 32px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; }}
-            .btn-sm {{ padding: 12px 20px; font-size: 14px; border-radius: 12px; }}
-            .input-row {{ display: flex; gap: 8px; margin-top: 6px; }}
-            .input-row input {{ flex: 1; padding: 12px 16px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 15px; font-family: 'Nunito', sans-serif; color: #1B2B3A; outline: none; background: #fff; }}
-            .input-row .scan-btn {{ display: none; align-items: center; padding: 12px 20px; background: #006089; color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; white-space: nowrap; }}
-            .input-row .scan-btn.visible {{ display: flex; }}
-            #reader {{ width: 100%; max-width: 400px; margin: 0 auto; border-radius: 16px; overflow: hidden; }}
-            #scan-msg {{ text-align: center; color: #6B7B8D; margin-top: 12px; font-size: 14px; }}
-            #result {{ margin-top: 16px; border-radius: 16px; padding: 20px; display: none; }}
-            #result.safe {{ background: #dcfce7; border: 2px solid #86efac; display: block; }}
-            #result.danger {{ background: #fecaca; border: 2px solid #f87171; display: block; }}
-            #result.warning {{ background: #fef3c7; border: 2px solid #fcd34d; display: block; }}
-            #result h3 {{ margin: 0 0 8px 0; font-size: 18px; }}
-            #result p {{ margin: 4px 0; font-size: 14px; }}
-            .section-label {{ font-size: 14px; font-weight: 600; color: #1B2B3A; margin-bottom: 6px; }}
-            .back-btn {{ display: block; width: 100%; max-width: 400px; margin: 16px auto 0; padding: 14px; background: #006089; color: #fff; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; text-align: center; }}
-            .hidden {{ display: none !important; }}
-            </style>
+    elif st.session_state.page == "scanner":
+        # ── SCANNER VIEW — osobny widok z auto-start kamery ──
+        profile = st.session_state.child_profile
+        allergens = profile.get("allergens", []) if profile else []
+        import json as _json
+        child_allergens_json = _json.dumps(allergens, ensure_ascii=False)
+        allergen_synonyms_json = _json.dumps(ALLERGEN_SYNONYMS, ensure_ascii=False)
+        unsafe_categories_json = _json.dumps(UNSAFE_CATEGORIES, ensure_ascii=False)
 
-            <!-- Karta skanera -->
-            <div id="scanner-card" class="card">
-                <div class="center" style="margin-bottom:20px;">
-                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px;">
-                        <svg viewBox="0 0 24 24" width="24" height="24" stroke="#006089" stroke-width="2" fill="none">
-                            <path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path>
-                            <path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path>
-                            <line x1="7" y1="12" x2="17" y2="12"></line>
-                        </svg>
-                        <span style="font-size:16px;font-weight:700;color:#1B2B3A;">Zeskanuj kod kreskowy</span>
-                    </div>
-                    <button class="btn" id="btn-cam">URUCHOM KAMERĘ</button>
-                </div>
-                <div>
-                    <div class="section-label">Wpisz kod ręcznie</div>
-                    <div class="input-row">
-                        <input type="text" id="manual-barcode" placeholder="np. 5901234567890">
-                        <span class="scan-btn" id="scan-manual-btn">SKANUJ</span>
-                    </div>
-                </div>
+        st.markdown(f"""
+        <style>
+        .scanner-page * {{ box-sizing: border-box; }}
+        .scanner-page {{ font-family: 'Nunito', sans-serif; padding: 16px; background: transparent; }}
+        .scanner-header {{ display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }}
+        .scanner-back-btn {{ display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: #006089; font-size: 16px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; padding: 8px 0; }}
+        .scanner-back-btn svg {{ width: 20px; height: 20px; }}
+        .scanner-title {{ font-size: 20px; font-weight: 800; color: #1B2B3A; margin: 0; }}
+        .scanner-card {{ background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }}
+        #reader {{ width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; }}
+        #scan-msg {{ text-align: center; color: #6B7B8D; margin-top: 12px; font-size: 14px; }}
+        #result {{ margin-top: 16px; border-radius: 16px; padding: 20px; display: none; }}
+        #result.safe {{ background: #dcfce7; border: 2px solid #86efac; display: block; }}
+        #result.danger {{ background: #fecaca; border: 2px solid #f87171; display: block; }}
+        #result.warning {{ background: #fef3c7; border: 2px solid #fcd34d; display: block; }}
+        #result h3 {{ margin: 0 0 8px 0; font-size: 18px; }}
+        #result p {{ margin: 4px 0; font-size: 14px; }}
+        .manual-section {{ margin-top: 20px; }}
+        .manual-label {{ font-size: 14px; font-weight: 600; color: #1B2B3A; margin-bottom: 8px; }}
+        .manual-row {{ display: flex; gap: 8px; }}
+        .manual-row input {{ flex: 1; padding: 12px 16px; border: 1px solid #d0d5dd; border-radius: 12px; font-size: 15px; font-family: 'Nunito', sans-serif; color: #1B2B3A; outline: none; background: #fff; }}
+        .manual-scan-btn {{ display: none; align-items: center; padding: 12px 20px; background: #006089; color: #fff; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Nunito', sans-serif; white-space: nowrap; border: none; }}
+        .manual-scan-btn.visible {{ display: flex; }}
+        .hidden {{ display: none !important; }}
+        </style>
+
+        <div class="scanner-page">
+            <div class="scanner-header">
+                <button class="scanner-back-btn" id="btn-back-home">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Wróć
+                </button>
+                <h2 class="scanner-title">Skaner kodów</h2>
             </div>
 
-            <!-- Kamera -->
-            <div id="camera-section" class="hidden">
+            <div id="camera-section">
                 <div id="reader"></div>
                 <div id="scan-msg">Skieruj kamerę na kod kreskowy...</div>
                 <div id="result"></div>
-                <button class="back-btn" id="btn-back">Wróć</button>
             </div>
 
-            <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-            <script>
-            (function() {{
-                var CHILD_ALLERGENS = {child_allergens_json};
-                var ALLERGEN_SYNONYMS = {allergen_synonyms_json};
-                var UNSAFE_CATEGORIES = {unsafe_categories_json};
+            <div class="manual-section">
+                <div class="manual-label">Lub wpisz kod ręcznie</div>
+                <div class="manual-row">
+                    <input type="text" id="manual-barcode" placeholder="np. 5901234567890">
+                    <button class="manual-scan-btn" id="scan-manual-btn">SPRAWDŹ</button>
+                </div>
+            </div>
+        </div>
 
-                var scannerCard = document.getElementById('scanner-card');
-                var cameraSection = document.getElementById('camera-section');
-                var btnCam = document.getElementById('btn-cam');
-                var btnBack = document.getElementById('btn-back');
-                var manualInput = document.getElementById('manual-barcode');
-                var manualBtn = document.getElementById('scan-manual-btn');
-                var scanMsg = document.getElementById('scan-msg');
-                var resultDiv = document.getElementById('result');
+        <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+        <script>
+        (function() {{
+            var CHILD_ALLERGENS = {child_allergens_json};
+            var ALLERGEN_SYNONYMS = {allergen_synonyms_json};
+            var UNSAFE_CATEGORIES = {unsafe_categories_json};
 
-                function normalizeText(text) {{
-                    return text.toLowerCase()
-                        .replace(/ł/g,'l').replace(/ą/g,'a').replace(/ę/g,'e')
-                        .replace(/ś/g,'s').replace(/ć/g,'c').replace(/ń/g,'n')
-                        .replace(/ó/g,'o').replace(/ż/g,'z').replace(/ź/g,'z');
-                }}
+            var cameraSection = document.getElementById('camera-section');
+            var btnBackHome = document.getElementById('btn-back-home');
+            var manualInput = document.getElementById('manual-barcode');
+            var manualBtn = document.getElementById('scan-manual-btn');
+            var scanMsg = document.getElementById('scan-msg');
+            var resultDiv = document.getElementById('result');
 
-                function checkProduct(barcode) {{
-                    scanMsg.textContent = 'Pobieram dane produktu...';
-                    resultDiv.className = '';
-                    resultDiv.style.display = 'none';
+            function normalizeText(text) {{
+                return text.toLowerCase()
+                    .replace(/ł/g,'l').replace(/ą/g,'a').replace(/ę/g,'e')
+                    .replace(/ś/g,'s').replace(/ć/g,'c').replace(/ń/g,'n')
+                    .replace(/ó/g,'o').replace(/ż/g,'z').replace(/ź/g,'z');
+            }}
 
-                    fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(barcode) + '.json', {{
-                        headers: {{ 'User-Agent': 'PureBaby/1.0' }}
-                    }})
-                    .then(function(r) {{ return r.json(); }})
-                    .then(function(data) {{
-                        if (data.status !== 1) {{
-                            resultDiv.className = 'danger';
-                            resultDiv.innerHTML = '<h3 style="color:#991b1b;">Nie znaleziono produktu</h3><p style="color:#991b1b;">Produkt o kodzie <strong>' + barcode + '</strong> nie istnieje w bazie.</p>';
-                            scanMsg.textContent = '';
-                            return;
-                        }}
+            function checkProduct(barcode) {{
+                scanMsg.textContent = 'Pobieram dane produktu...';
+                resultDiv.className = '';
+                resultDiv.style.display = 'none';
 
-                        var p = data.product || {{}};
-                        var name = p.product_name || p.generic_name || 'Nieznany produkt';
-                        var ingredients = p.ingredients_text_pl || p.ingredients_text || p.ingredients_text_en || '';
-                        var categories = p.categories_tags || [];
-                        var catsStr = Array.isArray(categories) ? categories.join(' ').toLowerCase() : String(categories).toLowerCase();
-
-                        for (var i = 0; i < UNSAFE_CATEGORIES.length; i++) {{
-                            var uc = UNSAFE_CATEGORIES[i];
-                            if (catsStr.indexOf(uc) !== -1 || name.toLowerCase().indexOf(uc) !== -1) {{
-                                resultDiv.className = 'danger';
-                                resultDiv.innerHTML = '<h3 style="color:#991b1b;">Produkt NIEBEZPIECZNY!</h3><p style="color:#991b1b;">Produkt nieodpowiedni dla dziecka: <strong>' + name + '</strong></p><p style="color:#991b1b;">Kategoria: ' + uc + '</p>';
-                                scanMsg.textContent = '';
-                                return;
-                            }}
-                        }}
-
-                        if (!ingredients) {{
-                            resultDiv.className = 'warning';
-                            resultDiv.innerHTML = '<h3 style="color:#92400e;">Brak informacji</h3><p style="color:#92400e;">Produkt <strong>' + name + '</strong> nie ma listy składników w bazie.</p>';
-                            scanMsg.textContent = '';
-                            return;
-                        }}
-
-                        var text = normalizeText(ingredients);
-                        var found = [];
-                        for (var a = 0; a < CHILD_ALLERGENS.length; a++) {{
-                            var allergen = CHILD_ALLERGENS[a];
-                            var synonyms = ALLERGEN_SYNONYMS[allergen] || [allergen.toLowerCase()];
-                            for (var s = 0; s < synonyms.length; s++) {{
-                                if (text.indexOf(synonyms[s]) !== -1) {{
-                                    found.push(allergen);
-                                    break;
-                                }}
-                            }}
-                        }}
-
-                        if (found.length > 0) {{
-                            resultDiv.className = 'danger';
-                            resultDiv.innerHTML = '<h3 style="color:#991b1b;">UWAGA! Produkt NIEBEZPIECZNY!</h3><p style="color:#991b1b;">Wykryto: <strong>' + found.join(', ') + '</strong></p><p style="color:#991b1b;">Produkt: <strong>' + name + '</strong></p>';
-                        }} else {{
-                            resultDiv.className = 'safe';
-                            resultDiv.innerHTML = '<h3 style="color:#166534;">Produkt bezpieczny!</h3><p style="color:#166534;">W produkcie <strong>' + name + '</strong> nie znaleziono składników, na które dziecko ma alergię.</p>';
-                        }}
-                        scanMsg.textContent = '';
-                    }})
-                    .catch(function(err) {{
+                fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(barcode) + '.json', {{
+                    headers: {{ 'User-Agent': 'PureBaby/1.0' }}
+                }})
+                .then(function(r) {{ return r.json(); }})
+                .then(function(data) {{
+                    if (data.status !== 1) {{
                         resultDiv.className = 'danger';
-                        resultDiv.innerHTML = '<h3 style="color:#991b1b;">Błąd połączenia</h3><p style="color:#991b1b;">Nie można pobrać danych produktu.</p>';
+                        resultDiv.innerHTML = '<h3 style="color:#991b1b;">Nie znaleziono produktu</h3><p style="color:#991b1b;">Produkt o kodzie <strong>' + barcode + '</strong> nie istnieje w bazie.</p>';
                         scanMsg.textContent = '';
-                    }});
-                }}
-
-                function showCamera() {{
-                    scannerCard.classList.add('hidden');
-                    cameraSection.classList.remove('hidden');
-                    resultDiv.className = '';
-                    resultDiv.style.display = 'none';
-                    scanMsg.textContent = 'Skieruj kamerę na kod kreskowy...';
-                    startScanner();
-                }}
-
-                function showCard() {{
-                    cameraSection.classList.add('hidden');
-                    scannerCard.classList.remove('hidden');
-                    if (window._scanner) {{
-                        try {{ window._scanner.stop(); }} catch(e) {{}}
-                    }}
-                }}
-
-                function startScanner() {{
-                    var lastCode = '';
-                    if (typeof Html5Qrcode === 'undefined') {{
-                        setTimeout(startScanner, 500);
                         return;
                     }}
-                    if (window._scanner) {{
-                        try {{ window._scanner.stop(); }} catch(e) {{}}
+
+                    var p = data.product || {{}};
+                    var name = p.product_name || p.generic_name || 'Nieznany produkt';
+                    var ingredients = p.ingredients_text_pl || p.ingredients_text || p.ingredients_text_en || '';
+                    var categories = p.categories_tags || [];
+                    var catsStr = Array.isArray(categories) ? categories.join(' ').toLowerCase() : String(categories).toLowerCase();
+
+                    for (var i = 0; i < UNSAFE_CATEGORIES.length; i++) {{
+                        var uc = UNSAFE_CATEGORIES[i];
+                        if (catsStr.indexOf(uc) !== -1 || name.toLowerCase().indexOf(uc) !== -1) {{
+                            resultDiv.className = 'danger';
+                            resultDiv.innerHTML = '<h3 style="color:#991b1b;">Produkt NIEBEZPIECZNY!</h3><p style="color:#991b1b;">Produkt nieodpowiedni dla dziecka: <strong>' + name + '</strong></p><p style="color:#991b1b;">Kategoria: ' + uc + '</p>';
+                            scanMsg.textContent = '';
+                            return;
+                        }}
                     }}
-                    window._scanner = new Html5Qrcode("reader");
-                    window._scanner.start(
-                        {{ facingMode: "environment" }},
-                        {{ fps: 10, qrbox: {{ width: 300, height: 120 }}, formatsToSupport: [
-                            Html5QrcodeSupportedFormats.EAN_8,
-                            Html5QrcodeSupportedFormats.EAN_13,
-                            Html5QrcodeSupportedFormats.UPC_A,
-                            Html5QrcodeSupportedFormats.UPC_E,
-                            Html5QrcodeSupportedFormats.CODE_128,
-                            Html5QrcodeSupportedFormats.CODE_39,
-                            Html5QrcodeSupportedFormats.ITF,
-                            Html5QrcodeSupportedFormats.CODABAR
-                        ]}},
-                        function(decodedText) {{
-                            if (decodedText !== lastCode) {{
-                                lastCode = decodedText;
-                                scanMsg.textContent = 'Odczytano kod, analizuję...';
-                                window._scanner.stop();
-                                checkProduct(decodedText);
+
+                    if (!ingredients) {{
+                        resultDiv.className = 'warning';
+                        resultDiv.innerHTML = '<h3 style="color:#92400e;">Brak informacji</h3><p style="color:#92400e;">Produkt <strong>' + name + '</strong> nie ma listy składników w bazie.</p>';
+                        scanMsg.textContent = '';
+                        return;
+                    }}
+
+                    var text = normalizeText(ingredients);
+                    var found = [];
+                    for (var a = 0; a < CHILD_ALLERGENS.length; a++) {{
+                        var allergen = CHILD_ALLERGENS[a];
+                        var synonyms = ALLERGEN_SYNONYMS[allergen] || [allergen.toLowerCase()];
+                        for (var s = 0; s < synonyms.length; s++) {{
+                            if (text.indexOf(synonyms[s]) !== -1) {{
+                                found.push(allergen);
+                                break;
                             }}
-                        }},
-                        function() {{}}
-                    ).catch(function(err) {{
-                        scanMsg.textContent = 'Nie można uruchomić kamery.';
-                    }});
-                }}
+                        }}
+                    }}
 
-                // Manual input
-                manualInput.addEventListener('input', function() {{
-                    if (manualInput.value.trim()) {{
-                        manualBtn.classList.add('visible');
+                    if (found.length > 0) {{
+                        resultDiv.className = 'danger';
+                        resultDiv.innerHTML = '<h3 style="color:#991b1b;">UWAGA! Produkt NIEBEZPIECZNY!</h3><p style="color:#991b1b;">Wykryto: <strong>' + found.join(', ') + '</strong></p><p style="color:#991b1b;">Produkt: <strong>' + name + '</strong></p>';
                     }} else {{
-                        manualBtn.classList.remove('visible');
+                        resultDiv.className = 'safe';
+                        resultDiv.innerHTML = '<h3 style="color:#166534;">Produkt bezpieczny!</h3><p style="color:#166534;">W produkcie <strong>' + name + '</strong> nie znaleziono składników, na które dziecko ma alergię.</p>';
                     }}
+                    scanMsg.textContent = '';
+                }})
+                .catch(function(err) {{
+                    resultDiv.className = 'danger';
+                    resultDiv.innerHTML = '<h3 style="color:#991b1b;">Błąd połączenia</h3><p style="color:#991b1b;">Nie można pobrać danych produktu.</p>';
+                    scanMsg.textContent = '';
                 }});
-                manualInput.addEventListener('keydown', function(e) {{
-                    if (e.key === 'Enter' && manualInput.value.trim()) {{
-                        scannerCard.classList.add('hidden');
-                        cameraSection.classList.remove('hidden');
-                        checkProduct(manualInput.value.trim());
-                    }}
-                }});
-                manualBtn.addEventListener('click', function() {{
-                    if (manualInput.value.trim()) {{
-                        scannerCard.classList.add('hidden');
-                        cameraSection.classList.remove('hidden');
-                        checkProduct(manualInput.value.trim());
-                    }}
-                }});
+            }}
 
-                // Buttons
-                btnCam.addEventListener('click', showCamera);
-                btnBack.addEventListener('click', showCard);
-            }})();
-            </script>
-            """, height=500)
+            function startScanner() {{
+                var lastCode = '';
+                if (typeof Html5Qrcode === 'undefined') {{
+                    setTimeout(startScanner, 500);
+                    return;
+                }}
+                if (window._scanner) {{
+                    try {{ window._scanner.stop(); }} catch(e) {{}}
+                }}
+                window._scanner = new Html5Qrcode("reader");
+                window._scanner.start(
+                    {{ facingMode: "environment" }},
+                    {{ fps: 10, qrbox: {{ width: 300, height: 120 }}, formatsToSupport: [
+                        Html5QrcodeSupportedFormats.EAN_8,
+                        Html5QrcodeSupportedFormats.EAN_13,
+                        Html5QrcodeSupportedFormats.UPC_A,
+                        Html5QrcodeSupportedFormats.UPC_E,
+                        Html5QrcodeSupportedFormats.CODE_128,
+                        Html5QrcodeSupportedFormats.CODE_39,
+                        Html5QrcodeSupportedFormats.ITF,
+                        Html5QrcodeSupportedFormats.CODABAR
+                    ]}},
+                    function(decodedText) {{
+                        if (decodedText !== lastCode) {{
+                            lastCode = decodedText;
+                            scanMsg.textContent = 'Odczytano kod, analizuję...';
+                            window._scanner.stop();
+                            
+                            // Zapisz do localStorage dla parent listener
+                            localStorage.setItem('purebaby_barcode', decodedText);
+                            localStorage.setItem('purebaby_ts', Date.now().toString());
+                            
+                            checkProduct(decodedText);
+                        }}
+                    }},
+                    function() {{}}
+                ).catch(function(err) {{
+                    scanMsg.textContent = 'Nie można uruchomić kamery.';
+                }});
+            }}
 
-        else:
-            st.markdown("""
-            <div class="content-card">
-                <h3>Witaj w PureBaby</h3>
-                <p style="color: #6B7B8D; margin-top: 8px;">
-                    Aplikacja do bezpiecznego skanowania produktów spożywczych dla Twojego dziecka.
-                    Zacznij od utworzenia profilu dziecka.
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
+            // Manual input
+            manualInput.addEventListener('input', function() {{
+                if (manualInput.value.trim()) {{
+                    manualBtn.classList.add('visible');
+                }} else {{
+                    manualBtn.classList.remove('visible');
+                }}
+            }});
+            manualInput.addEventListener('keydown', function(e) {{
+                if (e.key === 'Enter' && manualInput.value.trim()) {{
+                    checkProduct(manualInput.value.trim());
+                }}
+            }});
+            manualBtn.addEventListener('click', function() {{
+                if (manualInput.value.trim()) {{
+                    checkProduct(manualInput.value.trim());
+                }}
+            }});
+
+            // Back button - wróć do home i zatrzymaj kamerę
+            btnBackHome.addEventListener('click', function() {{
+                if (window._scanner) {{
+                    try {{ window._scanner.stop(); }} catch(e) {{}}
+                }}
+                localStorage.setItem('purebaby_cam_off', '1');
+                localStorage.setItem('purebaby_ts', Date.now().toString());
+            }});
+
+            // Auto-start kamery przy wejściu w widok
+            startScanner();
+        }})();
+        </script>
+        """, height=600)
 
     elif st.session_state.page == "profile":
         profile = st.session_state.child_profile
@@ -1300,62 +1536,64 @@ bottom_items = "".join(
 st.markdown(f'<div class="ios-bottom-bar-wrapper">{bottom_items}</div>', unsafe_allow_html=True)
 
 # ══════════════════════════════════════════════════════════════════════════════
-# 10. JS BRIDGE — sendActionToStreamlit + click handler
+# 10. PARENT MESSAGE LISTENER — odbiera postMessage z kamery (localStorage polling)
 # ══════════════════════════════════════════════════════════════════════════════
-st.components.v1.html("""<script>
+st.components.v1.html("""
+<script>
 (function() {
-    var pdoc = document;
-    try {
-        if (window.parent && window.parent.document) {
-            pdoc = window.parent.document;
-        }
-    } catch(e) {}
     var pwin = window.parent;
+    var pdoc = pwin.document;
+    
+    // Zabezpieczenie przed wielokrotnym uruchomieniem pętli
+    if (pwin._pb_poll) return;
+    pwin._pb_poll = true;
 
-    pwin.sendActionToStreamlit = function(s) {
-        var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
-        if (i) {
-            i.focus();
-            var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
-            setter.call(i, s + '&ts=' + Date.now());
-            i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
-            i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
-            i.blur();
-        }
-    };
-
-    pwin.trainerClickHandler = function(e) {
-        var el = e.target;
-        while (el && el !== pdoc.body) {
-            if (el.hasAttribute && el.hasAttribute('data-action')) {
-                e.preventDefault();
-                e.stopPropagation();
-                var actionStr = el.getAttribute('data-action');
-                if (pwin.sendActionToStreamlit) {
-                    pwin.sendActionToStreamlit(actionStr);
+    var lastTs = '';
+    setInterval(function() {
+        var ts = localStorage.getItem('purebaby_ts');
+        if (ts && ts !== lastTs) {
+            lastTs = ts;
+            var code = localStorage.getItem('purebaby_barcode');
+            if (code) {
+                // Czyścimy pamięć
+                localStorage.removeItem('purebaby_barcode');
+                localStorage.removeItem('purebaby_ts');
+                
+                // Szukamy ukrytego pola Streamlit w głównym oknie (pdoc)
+                var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
+                if (i) {
+                    i.focus();
+                    var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
+                    setter.call(i, 'action=barcode&code=' + encodeURIComponent(code) + '&ts=' + Date.now());
+                    
+                    // Wymuszamy aktualizację Reacta w Streamlit
+                    i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
+                    i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
+                    i.dispatchEvent(new pwin.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                    i.blur();
                 }
-                return;
             }
-            el = el.parentElement;
+            
+            var camOff = localStorage.getItem('purebaby_cam_off');
+            if (camOff === '1') {
+                localStorage.removeItem('purebaby_cam_off');
+                localStorage.removeItem('purebaby_ts');
+                var i = pdoc.querySelector('input[aria-label="js_data_exchange"]');
+                if (i) {
+                    i.focus();
+                    var setter = Object.getOwnPropertyDescriptor(pwin.HTMLInputElement.prototype, 'value').set;
+                    setter.call(i, 'action=cam_off&ts=' + Date.now());
+                    i.dispatchEvent(new pwin.Event('input', { bubbles: true }));
+                    i.dispatchEvent(new pwin.Event('change', { bubbles: true }));
+                    i.dispatchEvent(new pwin.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                    i.blur();
+                }
+            }
         }
-    };
-
-    function attachListeners() {
-        if (!pdoc.body) return;
-        pdoc.body.removeEventListener('click', pwin.trainerClickHandler);
-        pdoc.body.addEventListener('click', pwin.trainerClickHandler);
-        pdoc.body.setAttribute('data-bridge-v4', 'true');
-    }
-
-    if (pdoc.readyState === 'complete' || pdoc.readyState === 'interactive') {
-        attachListeners();
-    } else {
-        pdoc.addEventListener('DOMContentLoaded', attachListeners);
-    }
-    setTimeout(attachListeners, 500);
-    setTimeout(attachListeners, 2000);
+    }, 500);
 })();
-</script>""", height=0)
+</script>
+""", height=0)
 
 
 
