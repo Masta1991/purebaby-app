@@ -1049,9 +1049,11 @@ def render_product_carousel():
             + '</div>'
             + '<div class="pb-product-info">'
             + '<div class="pb-product-name">' + p["name"] + '</div>'
+            + '<div class="pb-product-bottom">'
             + old_price_html
             + '<div class="pb-price">' + p["price"] + '</div>'
             + '<div class="pb-buy-btn">Kup teraz</div>'
+            + '</div>'
             + '</div>'
             + '</a>'
         )
@@ -1069,6 +1071,8 @@ def render_product_carousel():
     
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    * { box-sizing: border-box; }
     
     .pb-carousel-container {
         background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
@@ -1122,9 +1126,11 @@ def render_product_carousel():
         border-radius: 10px;
     }
     .pb-product-card {
-        flex: 0 0 190px;
-        min-width: 190px;
-        max-width: 190px;
+        flex: 0 0 200px;
+        min-width: 200px;
+        max-width: 200px;
+        min-height: 360px;
+        height: auto;
         background: #ffffff;
         border-radius: 18px;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
@@ -1134,7 +1140,8 @@ def render_product_carousel():
         position: relative;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         scroll-snap-align: start;
-        display: block;
+        display: flex;
+        flex-direction: column;
         border: 1px solid rgba(0, 0, 0, 0.04);
     }
     .pb-product-card:hover {
@@ -1157,13 +1164,14 @@ def render_product_carousel():
     }
     .pb-image-wrapper {
         width: 100%;
-        height: 150px;
+        height: 180px;
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
         background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-        padding: 16px;
-        position: relative;
+        padding: 12px;
+        flex-shrink: 0;
     }
     .pb-image-wrapper::after {
         content: '';
@@ -1175,8 +1183,8 @@ def render_product_carousel():
         background: linear-gradient(90deg, transparent, rgba(0, 96, 137, 0.1), transparent);
     }
     .pb-image-wrapper img {
-        max-width: 85%;
-        max-height: 85%;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
         transition: transform 0.3s ease;
     }
@@ -1184,33 +1192,41 @@ def render_product_carousel():
         transform: scale(1.05);
     }
     .pb-product-info {
-        padding: 14px 16px 16px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        justify-content: space-between;
     }
     .pb-product-name {
-        font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
+        font-size: 14px;
         color: #1e293b;
         line-height: 1.4;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: 36px;
+        text-overflow: ellipsis;
         letter-spacing: -0.1px;
+    }
+    .pb-product-bottom {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: auto;
     }
     .pb-old-price {
         font-size: 12px;
         color: #94a3b8;
         text-decoration: line-through;
-        margin-bottom: 2px;
         font-weight: 500;
     }
     .pb-price {
         font-size: 18px;
         font-weight: 800;
         color: #006089;
-        margin-bottom: 10px;
         letter-spacing: -0.3px;
     }
     .pb-buy-btn {
@@ -1232,7 +1248,7 @@ def render_product_carousel():
         box-shadow: 0 4px 12px rgba(0, 96, 137, 0.3);
     }
     </style>
-    """, height=320)
+    """, height=420)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
