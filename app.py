@@ -649,7 +649,7 @@ def inject_custom_css():
         box-shadow: none !important;
         outline: none !important;
         padding: 14px 16px !important;
-        color: #1B2B3A !important;
+        color: #ffffff !important;
         font-size: 16px !important;
         font-family: 'Nunito', sans-serif !important;
         caret-color: #006089 !important;
@@ -724,6 +724,24 @@ PREDEFINED_ALLERGENS = [
     "Sztuczne barwniki",
 ]
 
+PROFILE_FILE = os.path.join(BASE_DIR, "zdjecia", "profile.json")
+
+def load_profile():
+    try:
+        if os.path.exists(PROFILE_FILE):
+            with open(PROFILE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+def save_profile(data):
+    try:
+        with open(PROFILE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception:
+        pass
+
 if "page" not in st.session_state:
     st.session_state.page = "home"
 if "mobile_menu" not in st.session_state:
@@ -731,7 +749,7 @@ if "mobile_menu" not in st.session_state:
 if "last_js_data" not in st.session_state:
     st.session_state.last_js_data = ""
 if "child_profile" not in st.session_state:
-    st.session_state.child_profile = None
+    st.session_state.child_profile = load_profile()
 if "old_profile" not in st.session_state:
     st.session_state.old_profile = None
 
@@ -840,8 +858,15 @@ with col_main:
     if st.session_state.page == "home":
         profile = st.session_state.child_profile
         if profile:
+            if profile.get("photo"):
+                st.markdown(f"""
+                <div style="text-align:center;margin-top:8px;">
+                    <img src="data:image/png;base64,{profile['photo']}" 
+                         style="width:100px;height:100px;border-radius:50%;border:3px solid #006089;object-fit:cover;box-shadow:0 4px 16px rgba(0,96,137,0.2);">
+                </div>
+                """, unsafe_allow_html=True)
             st.markdown(f"""
-            <div class="content-card">
+            <div class="content-card" style="text-align:center;">
                 <h3>Witaj, {profile['name']}! 🎉</h3>
                 <p style="color: #6B7B8D; margin-top: 8px;">Profil dziecka jest aktywny. Możesz skanować produkty i sprawdzać alergeny.</p>
             </div>
@@ -917,6 +942,7 @@ with col_main:
                     elif st.session_state.get("old_profile", {}).get("photo"):
                         profile_data["photo"] = st.session_state.old_profile["photo"]
                     st.session_state.child_profile = profile_data
+                    save_profile(profile_data)
                     st.session_state.old_profile = None
                     st.success(f"Profil {name.strip()} został pomyślnie zapisany i aktywowany w skanerze")
                     st.rerun()
