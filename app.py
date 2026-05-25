@@ -618,6 +618,27 @@ def inject_custom_css():
         border: 1px solid rgba(0, 0, 0, 0.1) !important;
         border-radius: 12px !important;
     }
+
+    div[data-baseweb="input"] input,
+    .stTextInput input,
+    input[aria-label*="Imię"],
+    input[aria-label*="Wiek"],
+    input[placeholder*="alergen"],
+    input:not([type="checkbox"]):not([type="radio"]) {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+        color: #1B2B3A !important;
+        font-size: 15px !important;
+        caret-color: #006089 !important;
+    }
+
+    .stMultiSelect div[data-baseweb="select"] > div {
+        background-color: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        border-radius: 12px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
