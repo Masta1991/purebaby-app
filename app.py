@@ -421,12 +421,9 @@ def inject_custom_css():
         box-shadow: none;
     }
     .ios-top-logo {
-        height: 28px;
+        height: 32px;
         width: auto;
-        object-fit: contain;
         display: block;
-        mix-blend-mode: multiply;
-        background: transparent;
     }
     .ios-nav-title {
         font-size: 16px;
@@ -840,7 +837,22 @@ st.markdown(f"""
       <span class="hbr"></span><span class="hbr"></span><span class="hbr"></span>
     </div>
     <div class="ios-nav-center">
-      <img src="data:image/png;base64,{LOGO_PURE_B64}" alt="Pure" class="ios-top-logo">
+      <svg class="ios-top-logo" viewBox="0 0 200 40" xmlns="http://www.w3.org/2000/svg">
+        <!-- Bąbelki wody -->
+        <circle cx="12" cy="20" r="8" fill="#006089" opacity="0.9"/>
+        <circle cx="22" cy="14" r="5" fill="#006089" opacity="0.7"/>
+        <circle cx="8" cy="10" r="3" fill="#006089" opacity="0.5"/>
+        <circle cx="26" cy="22" r="4" fill="#006089" opacity="0.6"/>
+        <circle cx="18" cy="28" r="3.5" fill="#006089" opacity="0.8"/>
+        <circle cx="6" cy="26" r="2" fill="#006089" opacity="0.4"/>
+        <circle cx="28" cy="10" r="2.5" fill="#006089" opacity="0.5"/>
+        <circle cx="14" cy="6" r="2" fill="#006089" opacity="0.6"/>
+        <!-- Refleksy na bąbelkach -->
+        <circle cx="10" cy="18" r="2" fill="#ffffff" opacity="0.4"/>
+        <circle cx="20" cy="12" r="1.2" fill="#ffffff" opacity="0.4"/>
+        <!-- Napis Pure Baby -->
+        <text x="38" y="27" font-family="Nunito, -apple-system, sans-serif" font-size="22" font-weight="800" fill="#006089" letter-spacing="0.5">Pure Baby</text>
+      </svg>
     </div>
     <div class="ios-avatar ios-scan-btn" data-action="action=nav&page=scanner" style="cursor:pointer;">
       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2"></path><path d="M17 3h2a2 2 0 012 2v2"></path><path d="M21 17v2a2 2 0 01-2 2h-2"></path><path d="M7 21H5a2 2 0 01-2-2v-2"></path><line x1="7" y1="12" x2="17" y2="12"></line></svg>
@@ -1127,12 +1139,12 @@ def render_product_carousel():
         flex: 0 0 200px;
         min-width: 200px;
         max-width: 200px;
-        min-height: 360px;
+        min-height: 400px;
         height: auto;
         background: #ffffff;
         border-radius: 18px;
         box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        overflow: hidden;
+        overflow: visible;
         text-decoration: none !important;
         color: inherit;
         position: relative;
@@ -1246,7 +1258,7 @@ def render_product_carousel():
         box-shadow: 0 4px 12px rgba(0, 96, 137, 0.3);
     }
     </style>
-    """, height=420)
+    """, height=460)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 8. WIDOKI — integralna część menu (home, form, settings)
@@ -1280,7 +1292,7 @@ with col_main:
         allergen_synonyms_json = _json.dumps(ALLERGEN_SYNONYMS, ensure_ascii=False)
         unsafe_categories_json = _json.dumps(UNSAFE_CATEGORIES, ensure_ascii=False)
 
-        st.markdown(f"""
+        st.components.v1.html(f"""
         <style>
         .scanner-page * {{ box-sizing: border-box; }}
         .scanner-page {{ font-family: 'Nunito', sans-serif; padding: 16px; background: transparent; }}
@@ -1289,7 +1301,7 @@ with col_main:
         .scanner-back-btn svg {{ width: 20px; height: 20px; }}
         .scanner-title {{ font-size: 20px; font-weight: 800; color: #1B2B3A; margin: 0; }}
         .scanner-card {{ background: #fff; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }}
-        #reader {{ width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; }}
+        #reader {{ width: 100%; max-width: 100%; border-radius: 16px; overflow: hidden; min-height: 200px; background: #f8fafc; }}
         #scan-msg {{ text-align: center; color: #6B7B8D; margin-top: 12px; font-size: 14px; }}
         #result {{ margin-top: 16px; border-radius: 16px; padding: 20px; display: none; }}
         #result.safe {{ background: #dcfce7; border: 2px solid #86efac; display: block; }}
@@ -1343,6 +1355,7 @@ with col_main:
             var manualBtn = document.getElementById('scan-manual-btn');
             var scanMsg = document.getElementById('scan-msg');
             var resultDiv = document.getElementById('result');
+            var scanner = null;
 
             function normalizeText(text) {{
                 return text.toLowerCase()
@@ -1421,19 +1434,18 @@ with col_main:
             }}
 
             function startScanner() {{
-                var lastCode = '';
                 if (typeof Html5Qrcode === 'undefined') {{
                     setTimeout(startScanner, 500);
                     return;
                 }}
-                if (window._scanner) {{
-                    try {{ window._scanner.stop(); }} catch(e) {{}}
+                if (scanner) {{
+                    try {{ scanner.stop(); }} catch(e) {{}}
                 }}
                 try {{
-                    window._scanner = new Html5Qrcode("reader");
-                    window._scanner.start(
+                    scanner = new Html5Qrcode("reader");
+                    scanner.start(
                         {{ facingMode: "environment" }},
-                        {{ fps: 10, qrbox: {{ width: 300, height: 120 }}, formatsToSupport: [
+                        {{ fps: 10, qrbox: {{ width: 250, height: 100 }}, formatsToSupport: [
                             Html5QrcodeSupportedFormats.EAN_8,
                             Html5QrcodeSupportedFormats.EAN_13,
                             Html5QrcodeSupportedFormats.UPC_A,
@@ -1444,26 +1456,20 @@ with col_main:
                             Html5QrcodeSupportedFormats.CODABAR
                         ]}},
                         function(decodedText) {{
-                            if (decodedText !== lastCode) {{
-                                lastCode = decodedText;
-                                scanMsg.textContent = 'Odczytano kod, analizuję...';
-                                window._scanner.stop();
-                                
-                                // Zapisz do localStorage dla parent listener
-                                localStorage.setItem('purebaby_barcode', decodedText);
-                                localStorage.setItem('purebaby_ts', Date.now().toString());
-                                
-                                checkProduct(decodedText);
-                            }}
+                            try {{
+                                scanner.stop();
+                            }} catch(e) {{}}
+                            scanMsg.textContent = 'Odczytano kod, analizuję...';
+                            localStorage.setItem('purebaby_barcode', decodedText);
+                            localStorage.setItem('purebaby_ts', Date.now().toString());
+                            checkProduct(decodedText);
                         }},
                         function() {{}}
                     ).catch(function(err) {{
                         scanMsg.textContent = 'Kamera niedostępna. Użyj pola poniżej.';
-                        console.warn('Scanner error:', err);
                     }});
                 }} catch(e) {{
                     scanMsg.textContent = 'Kamera niedostępna. Użyj pola poniżej.';
-                    console.warn('Scanner init error:', e);
                 }}
             }}
 
@@ -1486,16 +1492,16 @@ with col_main:
                 }}
             }});
 
-            // Back button - wróć do home i zatrzymaj kamerę
+            // Back button
             btnBackHome.addEventListener('click', function() {{
-                if (window._scanner) {{
-                    try {{ window._scanner.stop(); }} catch(e) {{}}
+                if (scanner) {{
+                    try {{ scanner.stop(); }} catch(e) {{}}
                 }}
                 localStorage.setItem('purebaby_cam_off', '1');
                 localStorage.setItem('purebaby_ts', Date.now().toString());
             }});
 
-            // Auto-start kamery przy wejściu w widok
+            // Auto-start
             startScanner();
         }})();
         </script>
