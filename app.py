@@ -71,7 +71,7 @@ icon_bytes_192, icon_bytes_512, ICON_B64, ICON_B64_512 = _process_icons()
 
 st.set_page_config(
     page_title="PureBaby",
-    page_icon=os.path.join(BASE_DIR, "zdjecia", "icon.png"),
+    page_icon="data:image/png;base64," + ICON_B64,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
