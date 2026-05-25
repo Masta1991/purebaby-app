@@ -25,46 +25,27 @@ ICON_DIR = os.path.join(BASE_DIR, "App Icon")
 if not os.path.exists(ICON_DIR):
     os.makedirs(ICON_DIR, exist_ok=True)
 
-icon_src = os.path.join(ICON_DIR, "szkielet.png")
-icon_512_path = os.path.join(ICON_DIR, "icon_512.png")
+icon_src = os.path.join(BASE_DIR, "zdjecia", "baby.png")
+icon_512_path = os.path.join(BASE_DIR, "zdjecia", "icon_512.png")
 icon_fav_path = os.path.join(BASE_DIR, "zdjecia", "icon.png")
 logo_pure_path = os.path.join(BASE_DIR, "zdjecia", "logo_transparent_large.png")
 
 @st.cache_data
 def _process_icons():
-    if not os.path.exists(icon_src):
-        try:
-            from PIL import ImageDraw, ImageFont
-            img = Image.new('RGBA', (192, 192), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(img)
-            draw.ellipse([8, 8, 184, 184], outline='#006089', width=6)
-            try:
-                font = ImageFont.truetype("arial.ttf", 75)
-            except IOError:
-                font = ImageFont.load_default()
-            try:
-                left, top, right, bottom = draw.textbbox((0, 0), "MS", font=font)
-                w, h = right - left, bottom - top
-            except AttributeError:
-                w, h = draw.textsize("MS", font=font)
-            draw.text(((192 - w) // 2, (192 - h) // 2 - 5), "MS", fill='#006089', font=font)
-            img.save(icon_src, 'PNG')
-        except Exception:
-            pass
     try:
         img_pil = Image.open(icon_src)
         if img_pil.size != (192, 192):
-            img_pil = img_pil.resize((192, 192), Image.LANCZOS)
-            img_pil.save(icon_src, 'PNG')
+            img_192 = img_pil.resize((192, 192), Image.LANCZOS)
+            img_192.save(icon_fav_path, 'PNG')
+        else:
+            img_pil.save(icon_fav_path, 'PNG')
         img_512 = img_pil.resize((512, 512), Image.LANCZOS)
         img_512.save(icon_512_path, 'PNG')
-        img_pil.save(icon_fav_path, 'PNG')
     except Exception:
         img = Image.new('RGBA', (192, 192), (0, 0, 0, 0))
         img.save(icon_fav_path, 'PNG')
         img.resize((512, 512), Image.LANCZOS).save(icon_512_path, 'PNG')
-        img.save(icon_src, 'PNG')
-    with open(icon_src, "rb") as f:
+    with open(icon_fav_path, "rb") as f:
         b192 = f.read()
     with open(icon_512_path, "rb") as f:
         b512 = f.read()
